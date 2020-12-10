@@ -48,7 +48,7 @@
   <ItemGroup>
     <Reference Include="DAO_FleetService, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\Acceso_datos_fleet_service\DAO_FleetService\bin\Debug\DAO_FleetService.dll</HintPath>
+      <HintPath>..\..\DAO\DAO_FleetService\bin\Debug\DAO_FleetService.dll</HintPath>
     </Reference>
     <Reference Include="EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
       <HintPath>packages\EntityFramework.6.4.4\lib\net45\EntityFramework.dll</HintPath>
@@ -176,6 +176,7 @@
     <Compile Include="Controllers\JobTitleController.cs" />
     <Compile Include="Controllers\MaintenanceItemController.cs" />
     <Compile Include="Controllers\MaintenanceRoutineController.cs" />
+    <Compile Include="Controllers\UsersController.cs" />
     <Compile Include="Controllers\ValuesController.cs" />
     <Compile Include="Controllers\VehicleController.cs" />
     <Compile Include="Global.asax.cs">
@@ -202,6 +203,8 @@
     <Compile Include="ViewModels\PresentationUnitViewModel.cs" />
     <Compile Include="ViewModels\ResponseApiViewModel.cs" />
     <Compile Include="ViewModels\TypeOfMaintenanceItemViewModel.cs" />
+    <Compile Include="ViewModels\UserAccessViewModel.cs" />
+    <Compile Include="ViewModels\UserLoginViewModel.cs" />
     <Compile Include="ViewModels\VehicleModelViewModel.cs" />
     <Compile Include="ViewModels\VehicleStateViewModel.cs" />
     <Compile Include="ViewModels\VehicleTypeViewModel.cs" />
