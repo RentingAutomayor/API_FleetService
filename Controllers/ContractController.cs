@@ -516,5 +516,63 @@ namespace API_FleetService.Controllers
 				}
 
 
+				[HttpGet]
+				public IHttpActionResult GetLastContractByClientAndDealer(int pClient_id, int pDealer_id) {
+						try
+						{
+								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities()) {
+
+										var oContract = db.Contract.Where(ct => ct.cntr_state == true && ct.cli_id == pClient_id && ct.deal_id == pDealer_id)
+																				.Select(ct => new ContractViewModel
+																				{
+																						id = ct.cntr_id,
+																						consecutive = ct.cntr_consecutive,
+																						code = ct.cntr_code,
+																						name = ct.cntr_name,
+																						observation = ct.cntr_observation,
+																						dealer = new DealerViewModel
+																						{
+																								id = ct.deal_id,
+																								document = ct.Dealer.deal_document,
+																								name = ct.Dealer.deal_name
+																						},
+																						client = new ClientViewModel
+																						{
+																								id = ct.cli_id,
+																								document = ct.Client.cli_document,
+																								name = ct.Client.cli_name
+																						},
+																						contractState = new ContractStateViewModel
+																						{
+																								id = ct.cntrst_id,
+																								name = ct.ContractState.cntrst_name,
+																								description = ct.ContractState.cntrst_description
+																						},
+																						discountType = new DiscountTypeViewModel
+																						{
+																								id = ct.dst_id,
+																								name = ct.DiscountType.dst_name
+																						},
+																						discountValue = ct.cntr_discountValue,
+																						amountOfMaintenances = ct.cntr_amountOfMaintenances,
+																						amountVehicles = ct.cntr_amountVehicles,
+																						startingDate = ct.cntr_startingDate,
+																						endingDate = ct.cntr_endingDate,
+																						duration = ct.cntr_duration,
+																						registrationDate = ct.cntr_registrationDate
+																				}).OrderByDescending(ct => ct.registrationDate).FirstOrDefault();
+
+										oContract.lsVehicleModels = this.getLisVehicleModelsByContrat((int)oContract.id);
+										oContract.lsVehicles = this.getLisVehiclesByContrat((int)oContract.id);
+
+										return Ok(oContract);
+								}
+						}
+						catch (Exception ex) {
+								return BadRequest(ex.Message);
+						}			
+
+				}
+
 		}
 }

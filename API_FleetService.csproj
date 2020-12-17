@@ -46,9 +46,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="DAO_FleetService, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\Acceso_datos_fleet_service\DAO_FleetService\bin\Debug\DAO_FleetService.dll</HintPath>
+    <Reference Include="DAO_FleetService">
+      <HintPath>..\DAO_FleetService\bin\Debug\DAO_FleetService.dll</HintPath>
     </Reference>
     <Reference Include="EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
       <HintPath>packages\EntityFramework.6.4.4\lib\net45\EntityFramework.dll</HintPath>
@@ -172,10 +171,13 @@
     <Compile Include="Controllers\ContactController.cs" />
     <Compile Include="Controllers\ContractController.cs" />
     <Compile Include="Controllers\DealerController.cs" />
+    <Compile Include="Controllers\FinancialInformationController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\JobTitleController.cs" />
     <Compile Include="Controllers\MaintenanceItemController.cs" />
     <Compile Include="Controllers\MaintenanceRoutineController.cs" />
+    <Compile Include="Controllers\MovementController.cs" />
+    <Compile Include="Controllers\TransactionController.cs" />
     <Compile Include="Controllers\ValuesController.cs" />
     <Compile Include="Controllers\VehicleController.cs" />
     <Compile Include="Global.asax.cs">
@@ -193,14 +195,25 @@
     <Compile Include="ViewModels\DealerViewModel.cs" />
     <Compile Include="ViewModels\DepartmentViewModel.cs" />
     <Compile Include="ViewModels\DiscountTypeViewModel.cs" />
+    <Compile Include="ViewModels\EnumMovement.cs" />
+    <Compile Include="ViewModels\EnumTransactionState.cs" />
+    <Compile Include="ViewModels\FinancialInformationViewModel.cs" />
     <Compile Include="ViewModels\FrequencyViewModel.cs" />
     <Compile Include="ViewModels\ICRUDElement.cs" />
     <Compile Include="ViewModels\JobTitleViewModel.cs" />
     <Compile Include="ViewModels\MaintenanceItemViewModel.cs" />
     <Compile Include="ViewModels\MaintenanceRoutineViewModel.cs" />
+    <Compile Include="ViewModels\MovementTypeViewModel.cs" />
+    <Compile Include="ViewModels\MovementViewModel.cs" />
     <Compile Include="ViewModels\PersonViewModel.cs" />
     <Compile Include="ViewModels\PresentationUnitViewModel.cs" />
+    <Compile Include="ViewModels\PricesByContractViewModel.cs" />
+    <Compile Include="ViewModels\PricesByDealerViewModel.cs" />
     <Compile Include="ViewModels\ResponseApiViewModel.cs" />
+    <Compile Include="ViewModels\TransactionDetailViewModel.cs" />
+    <Compile Include="ViewModels\TransactionObservationViewModel.cs" />
+    <Compile Include="ViewModels\TransactionStateViewModel.cs" />
+    <Compile Include="ViewModels\TransactionViewModel.cs" />
     <Compile Include="ViewModels\TypeOfMaintenanceItemViewModel.cs" />
     <Compile Include="ViewModels\VehicleModelViewModel.cs" />
     <Compile Include="ViewModels\VehicleStateViewModel.cs" />
