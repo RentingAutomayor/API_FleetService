@@ -9,13 +9,15 @@ using DAO_FleetService;
 
 namespace API_FleetService.Controllers
 {
-    public class VehicleController : ApiController
-    {
-        [HttpGet]
-        public IHttpActionResult GetBrands() {
+		public class VehicleController : ApiController
+		{
+				[HttpGet]
+				public IHttpActionResult GetBrands()
+				{
 						try
 						{
-								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities()) {
+								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+								{
 										var lsBrand = db.VehicleBrand.Where(brn => brn.vb_state == true)
 																								.Select(brn => new BrandViewModel
 																								{
@@ -26,14 +28,14 @@ namespace API_FleetService.Controllers
 																								}).ToList();
 										return Ok(lsBrand);
 								}
-								
+
 						}
 						catch (Exception ex)
 						{
 
 								return BadRequest(ex.Message);
 						}
-        }
+				}
 
 				[HttpGet]
 				public IHttpActionResult GetVehicleType()
@@ -47,7 +49,7 @@ namespace API_FleetService.Controllers
 																								{
 																										id = vt.vt_id,
 																										name = vt.vt_name,
-																										description =  vt.vt_description,
+																										description = vt.vt_description,
 																										state = vt.vt_state,
 																										registrationDate = vt.vt_registrationDate
 																								}).ToList();
@@ -63,13 +65,16 @@ namespace API_FleetService.Controllers
 				}
 
 				[HttpGet]
-				public IHttpActionResult GetVehicleModelsByTypes(string sLsTypes) {
+				public IHttpActionResult GetVehicleModelsByTypes(string sLsTypes)
+				{
 						try
 						{
 								string[] aVehicleTypes = sLsTypes.Split(',');
-								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities()) {
+								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+								{
 										List<VehicleModelViewModel> lsVehicleModels = new List<VehicleModelViewModel>();
-										foreach(var item in aVehicleTypes)  {
+										foreach (var item in aVehicleTypes)
+										{
 												var idType = int.Parse(item);
 												var lsByType = db.VehicleModel.Where(vt => vt.vt_id == idType)
 																						.Select(vm => new VehicleModelViewModel
@@ -95,7 +100,7 @@ namespace API_FleetService.Controllers
 						}
 				}
 				[HttpGet]
-				public IHttpActionResult GetVehicleModelByBrandAndType(int pId_brand=0, int pId_vehicleType=0)
+				public IHttpActionResult GetVehicleModelByBrandAndType(int pId_brand = 0, int pId_vehicleType = 0)
 				{
 						try
 						{
@@ -116,7 +121,9 @@ namespace API_FleetService.Controllers
 																								brand = new BrandViewModel { id = vm.vb_id, name = vm.VehicleBrand.vb_name },
 																								type = new VehicleTypeViewModel { id = vm.vt_id, name = vm.VehicleType.vt_name }
 																						}).ToList();
-										} else if (pId_brand != 0 || pId_vehicleType != 0) {
+										}
+										else if (pId_brand != 0 || pId_vehicleType != 0)
+										{
 
 												lsVehicleModel = db.VehicleModel.Where(vm => vm.vm_state == true && vm.vb_id == pId_brand || vm.vt_id == pId_vehicleType)
 																					.Select(vm => new VehicleModelViewModel
@@ -131,7 +138,8 @@ namespace API_FleetService.Controllers
 																					}).ToList();
 
 										}
-										else {
+										else
+										{
 												lsVehicleModel = db.VehicleModel.Where(vm => vm.vm_state == true)
 																								.Select(vm => new VehicleModelViewModel
 																								{
@@ -144,8 +152,8 @@ namespace API_FleetService.Controllers
 																										type = new VehicleTypeViewModel { id = vm.vt_id, name = vm.VehicleType.vt_name }
 																								}).ToList();
 										}
-										
-										return Ok(lsVehicleModel);	
+
+										return Ok(lsVehicleModel);
 								}
 
 						}
@@ -157,10 +165,12 @@ namespace API_FleetService.Controllers
 				}
 
 				[HttpGet]
-				public IHttpActionResult GetVehicleStates() {
+				public IHttpActionResult GetVehicleStates()
+				{
 						try
 						{
-								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities()) {
+								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+								{
 										var lsStates = db.vehicleState.Where(st => st.vs_state == true)
 																				.Select(st => new VehicleStateViewModel
 																				{
@@ -171,7 +181,7 @@ namespace API_FleetService.Controllers
 																				}).ToList();
 										return Ok(lsStates);
 								}
-								
+
 						}
 						catch (Exception ex)
 						{
@@ -182,40 +192,45 @@ namespace API_FleetService.Controllers
 
 				[HttpGet]
 
-				public IHttpActionResult GetVehiclesByClient(int pClient_id) {
+				public IHttpActionResult GetVehiclesByClient(int pClient_id)
+				{
 						try
 						{
-								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities()) {
+								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+								{
 										var lsVehicles = db.Vehicle.Where(vh => vh.veh_state == true && vh.cli_id == pClient_id)
 																				.Select(vh => new VehicleViewModel
 																				{
 																						id = vh.veh_id,
-																						licensePlate= vh.veh_licensePlate,
+																						licensePlate = vh.veh_licensePlate,
 																						chasisCode = vh.veh_chasisCode,
-																						vehicleState = new VehicleStateViewModel { id = vh.vehicleState.vs_id, name = vh.vehicleState.vs_name},
-																						vehicleModel = new VehicleModelViewModel { 
+																						vehicleState = new VehicleStateViewModel { id = vh.vehicleState.vs_id, name = vh.vehicleState.vs_name },
+																						vehicleModel = new VehicleModelViewModel
+																						{
 																								id = vh.vm_id,
 																								shortName = vh.VehicleModel.vm_shortName,
 																								longName = vh.VehicleModel.vm_longName,
-																								type = new VehicleTypeViewModel { 
+																								type = new VehicleTypeViewModel
+																								{
 																										id = vh.VehicleModel.vt_id,
 																										name = vh.VehicleModel.VehicleType.vt_name
 																								},
-																								brand = new BrandViewModel { 
+																								brand = new BrandViewModel
+																								{
 																										id = vh.VehicleModel.vb_id,
 																										name = vh.VehicleModel.VehicleBrand.vb_name
-																								}																								
+																								}
 																						},
 																						year = vh.veh_year,
 																						mileage = vh.veh_mileage,
 																						state = vh.veh_state,
 																						registrationDate = vh.veh_registrationDate
-																						
+
 																				}).ToList();
 
 										return Ok(lsVehicles);
 								}
-								
+
 						}
 						catch (Exception ex)
 						{
@@ -224,18 +239,20 @@ namespace API_FleetService.Controllers
 						}
 				}
 
-				public IHttpActionResult GetVehiclesByClientAndModel(int pClient_id, string sModels) {
+				public IHttpActionResult GetVehiclesByClientAndModel(int pClient_id, string sModels)
+				{
 						try
 						{
 								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
 								{
 										string[] aModels = sModels.Split(',');
 										List<int> lsModelsId = new List<int>();
-										foreach (var item in aModels) {
+										foreach (var item in aModels)
+										{
 												lsModelsId.Add(int.Parse(item));
 										}
-										var lsVehicles = db.Vehicle.Where(vh => vh.veh_state == true 
-																						&& vh.cli_id == pClient_id  && lsModelsId.Any(item => item == vh.vm_id))
+										var lsVehicles = db.Vehicle.Where(vh => vh.veh_state == true
+																						&& vh.cli_id == pClient_id && lsModelsId.Any(item => item == vh.vm_id))
 																				.Select(vh => new VehicleViewModel
 																				{
 																						id = vh.veh_id,
@@ -276,7 +293,8 @@ namespace API_FleetService.Controllers
 				}
 
 				[HttpPost]
-				public IHttpActionResult Insert(VehicleViewModel pVehicle) {
+				public IHttpActionResult Insert(VehicleViewModel pVehicle)
+				{
 						try
 						{
 								var rta = new ResponseApiViewModel();
@@ -287,10 +305,11 @@ namespace API_FleetService.Controllers
 										rta.message = "El vehículo con placas: " + pVehicle.licensePlate + " fue almacenado correctamente en la base de datos";
 										return Ok(rta);
 								}
-								else {
+								else
+								{
 										return BadRequest("Ocurrió un error al intertar almacenar el vehículo en la base de datos");
 								}
-								
+
 						}
 						catch (Exception ex)
 						{
@@ -309,14 +328,15 @@ namespace API_FleetService.Controllers
 										var rta = new ResponseApiViewModel();
 										var oVehicleDB = db.Vehicle.Where(vh => vh.veh_id == pVehicle.id).FirstOrDefault();
 
-										if(pVehicle.licensePlate.Trim() == "")
+										if (pVehicle.licensePlate.Trim() == "")
 										{
 												throw new Exception("El campo placa no puede ser vacío");
 										}
 
 										var oOtherVehicle = db.Vehicle.Where(vh => vh.veh_licensePlate == pVehicle.licensePlate && vh.veh_id != pVehicle.id).FirstOrDefault();
 
-										if (oOtherVehicle != null) {
+										if (oOtherVehicle != null)
+										{
 												throw new Exception("La placa con la cual intenta actualizar el vehículo, ya se encuentra almacenada en la base de datos");
 										}
 
@@ -344,12 +364,12 @@ namespace API_FleetService.Controllers
 				public IHttpActionResult Delete(VehicleViewModel pVehicle)
 				{
 						try
-						{							
+						{
 								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
 								{
 										var rta = new ResponseApiViewModel();
 										var oVehicleToDelete = db.Vehicle.Where(vh => vh.veh_id == pVehicle.id).FirstOrDefault();
-										
+
 										oVehicleToDelete.veh_licensePlate = "";
 										oVehicleToDelete.veh_chasisCode = "";
 										oVehicleToDelete.veh_state = false;
@@ -360,6 +380,56 @@ namespace API_FleetService.Controllers
 										rta.message = "Se ha eliminado el vehículo: " + oVehicleToDelete.veh_licensePlate + " de la base de datos";
 										return Ok(rta);
 								}
+						}
+						catch (Exception ex)
+						{
+								return BadRequest(ex.Message);
+						}
+				}
+
+
+				[HttpGet]
+				public IHttpActionResult GetVehiclesByLicensePlate(string pLicensePlate)
+				{
+						try
+						{
+								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+								{
+										var lsVehicles = db.Vehicle.Where(vh => vh.veh_state == true && vh.veh_licensePlate.ToUpper().Contains(pLicensePlate.ToUpper()))
+																								.Select(vh => new VehicleViewModel
+
+																								{
+																										id = vh.veh_id,
+																										licensePlate = vh.veh_licensePlate,
+																										chasisCode = vh.veh_chasisCode,
+																										vehicleState = new VehicleStateViewModel { id = vh.vehicleState.vs_id, name = vh.vehicleState.vs_name },
+																										vehicleModel = new VehicleModelViewModel
+																										{
+																												id = vh.vm_id,
+																												shortName = vh.VehicleModel.vm_shortName,
+																												longName = vh.VehicleModel.vm_longName,
+																												type = new VehicleTypeViewModel
+																												{
+																														id = vh.VehicleModel.vt_id,
+																														name = vh.VehicleModel.VehicleType.vt_name
+																												},
+																												brand = new BrandViewModel
+																												{
+																														id = vh.VehicleModel.vb_id,
+																														name = vh.VehicleModel.VehicleBrand.vb_name
+																												}
+																										},
+																										year = vh.veh_year,
+																										mileage = vh.veh_mileage,
+																										state = vh.veh_state,
+																										Client_id = vh.cli_id,
+																										registrationDate = vh.veh_registrationDate
+																								}
+																								).ToList()
+																								.Take(10);
+										return Ok(lsVehicles);
+								}
+
 						}
 						catch (Exception ex)
 						{

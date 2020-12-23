@@ -220,13 +220,13 @@ namespace API_FleetService.Controllers
 						{
 								var transactionType = "UPDATE";
 								var rta = new ResponseApiViewModel();
-							
+
 								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
 								{
 
 										Contract oContractDB = db.Contract.Where(ct => ct.cntr_id == pContract.id).FirstOrDefault();
 										this.setDataToContract(pContract, ref oContractDB, transactionType);
-										
+
 										db.SaveChanges();
 
 										var contract_id = (int)pContract.id;
@@ -264,8 +264,8 @@ namespace API_FleetService.Controllers
 
 										var contract_id = (int)pContract.id;
 										this.deleteVehicleModelsToContract(contract_id);
-										this.deleteVehiclesToContract(contract_id);									
-										
+										this.deleteVehiclesToContract(contract_id);
+
 										rta.response = true;
 										rta.message = "Se ha eliminado el contrato " + oContractDB.cntr_code + " de la base de datos";
 										return Ok(rta);
@@ -570,8 +570,66 @@ namespace API_FleetService.Controllers
 						}
 						catch (Exception ex) {
 								return BadRequest(ex.Message);
-						}			
+						}
 
+				}
+
+				[HttpGet]
+				public IHttpActionResult GetContractByVehicleId(int vehicle_id) {
+						try
+						{
+								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities()) {
+										var lsContracts = db.VehiclesByContract.Where(vh => vh.veh_id == vehicle_id)
+												.Select( ctr => ctr.cntr_id)
+												.ToList();
+
+										var contract = db.Contract.Where(ct => ct.cntr_state == true && lsContracts.Any(ctr => ct.cntr_id == ctr))
+																	.Select(ct => new ContractViewModel
+																	{
+																			id = ct.cntr_id,
+																			consecutive = ct.cntr_consecutive,
+																			code = ct.cntr_code,
+																			name = ct.cntr_name,
+																			observation = ct.cntr_observation,
+																			dealer = new DealerViewModel
+																			{
+																					id = ct.deal_id,
+																					document = ct.Dealer.deal_document,
+																					name = ct.Dealer.deal_name
+																			},
+																			client = new ClientViewModel
+																			{
+																					id = ct.cli_id,
+																					document = ct.Client.cli_document,
+																					name = ct.Client.cli_name
+																			},
+																			contractState = new ContractStateViewModel
+																			{
+																					id = ct.cntrst_id,
+																					name = ct.ContractState.cntrst_name,
+																					description = ct.ContractState.cntrst_description
+																			},
+																			discountType = new DiscountTypeViewModel
+																			{
+																					id = ct.dst_id,
+																					name = ct.DiscountType.dst_name
+																			},
+																			discountValue = ct.cntr_discountValue,
+																			amountOfMaintenances = ct.cntr_amountOfMaintenances,
+																			amountVehicles = ct.cntr_amountVehicles,
+																			startingDate = ct.cntr_startingDate,
+																			endingDate = ct.cntr_endingDate,
+																			duration = ct.cntr_duration,
+																			registrationDate = ct.cntr_registrationDate
+																	}).FirstOrDefault();
+
+										return Ok(contract);
+								}
+						}
+						catch (Exception ex)
+						{
+								return BadRequest(ex.Message);	
+						}
 				}
 
 		}

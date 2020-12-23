@@ -103,6 +103,10 @@ namespace API_FleetService.Controllers
 																transactionDetail trxDetail = new transactionDetail();
 																trxDetail.trx_id = trx_id;
 																trxDetail.trx_relation_id = (transaction.headerDetails.relatedTransaction != null) ? transaction.headerDetails.relatedTransaction.id : null;
+																if (transaction.headerDetails.vehicle != null) {
+																		VehicleController vehController = new VehicleController();
+																		vehController.Update(transaction.headerDetails.vehicle);																		
+																}
 																trxDetail.veh_id = (transaction.headerDetails.vehicle != null) ? transaction.headerDetails.vehicle.id : null;
 																trxDetail.deal_id = (transaction.headerDetails.dealer != null) ? transaction.headerDetails.dealer.id : null;
 																trxDetail.bra_id = (transaction.headerDetails.branch != null) ? transaction.headerDetails.branch.id : null;
@@ -127,22 +131,48 @@ namespace API_FleetService.Controllers
 																		trxRelatedDetail.trx_rejectDate = DateTime.Now;
 																}
 
+
+																db.transactionDetail.Add(trxDetail);
+																db.SaveChanges();
+
 														}
 
-														if (transaction.lsObservations.Count > 0)
-														{
-																foreach (var observation in transaction.lsObservations)
+
+														if (transaction.lsItems != null) {
+																if (transaction.lsItems.Count > 0)
 																{
-																		observationsByTransaction observationDb = new observationsByTransaction();
-																		observationDb.trx_id = trx_id;
-																		observationDb.obstrx_description = observation.description;
-																		observationDb.usu_id = transaction.usu_id;
-																		observationDb.obstrx_registrationDate = DateTime.Now;
-																		db.observationsByTransaction.Add(observationDb);
-																		
-																		db.SaveChanges();
+																		foreach (var item in transaction.lsItems)
+																		{
+																				transactionItems oItemDB = new transactionItems();
+																				oItemDB.trx_id = trx_id;
+																				oItemDB.mi_id = item.id;
+																				oItemDB.mi_amount = item.amount;
+																				oItemDB.mi_referencePrice = item.referencePrice;
+																				oItemDB.mi_totalPrice = (item.referencePrice * item.amount);
+																				db.transactionItems.Add(oItemDB);
+																				db.SaveChanges();
+																		}
 																}
 														}
+														
+
+														if (transaction.lsObservations != null) {
+																if (transaction.lsObservations.Count > 0)
+																{
+																		foreach (var observation in transaction.lsObservations)
+																		{
+																				observationsByTransaction observationDb = new observationsByTransaction();
+																				observationDb.trx_id = trx_id;
+																				observationDb.obstrx_description = observation.description;
+																				observationDb.usu_id = transaction.usu_id;
+																				observationDb.obstrx_registrationDate = DateTime.Now;
+																				db.observationsByTransaction.Add(observationDb);
+
+																				db.SaveChanges();
+																		}
+																}
+														}
+														
 												}
 										}
 										return Ok(rta);
@@ -154,5 +184,66 @@ namespace API_FleetService.Controllers
 								return BadRequest(ex.Message);
 						}
 				}
+
+
+				[HttpGet]
+				public IHttpActionResult GetTransactionsToApproveByClient(int client_id) {
+						try
+						{
+								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities()) {
+										var lsTrxToApprove = db.STRPRC_GET_WORKORDERS_TO_APPROVE_BY_CLIENT(client_id);
+
+										var lsTransactions = new List<TransactionViewModel>();
+
+										foreach (var trx in lsTrxToApprove)
+										{
+												TransactionViewModel trxToApprove = new TransactionViewModel();
+												trxToApprove.id = trx.trx_id;
+												trxToApprove.consecutive = trx.trx_consecutive;
+												trxToApprove.value = (double) trx.trx_value;
+												trxToApprove.registrationDate = trx.trx_registrationDate;
+												trxToApprove.client = new ClientViewModel();
+												trxToApprove.client.id = trx.cli_id;
+												trxToApprove.client.document = trx.cli_document;
+												trxToApprove.client.name = trx.cli_name;
+
+												trxToApprove.headerDetails = new TransactionDetailViewModel();
+
+												trxToApprove.headerDetails.vehicle = new VehicleViewModel();
+												trxToApprove.headerDetails.vehicle.id = trx.veh_id;
+												trxToApprove.headerDetails.vehicle.licensePlate = trx.veh_licensePlate;
+
+												trxToApprove.headerDetails.dealer = new DealerViewModel();
+												trxToApprove.headerDetails.dealer.id = trx.deal_id;
+												trxToApprove.headerDetails.dealer.name = trx.deal_name;
+
+												trxToApprove.headerDetails.branch = new BranchViewModel();
+												trxToApprove.headerDetails.branch.id = trx.bra_id;
+												trxToApprove.headerDetails.branch.name = trx.bra_name;
+
+												trxToApprove.headerDetails.contract = new ContractViewModel();
+												trxToApprove.headerDetails.contract.id = trx.cntr_id;
+												trxToApprove.headerDetails.contract.code = trx.cntr_code;
+												trxToApprove.headerDetails.contract.name = trx.cntr_name;
+
+												trxToApprove.headerDetails.maintenanceRoutine = new MaintenanceRoutineViewModel();
+												trxToApprove.headerDetails.maintenanceRoutine.id = trx.mr_id;
+												trxToApprove.headerDetails.maintenanceRoutine.name = trx.mr_name;
+
+												lsTransactions.Add(trxToApprove);
+
+										}
+
+										return Ok(lsTransactions);
+								}
+								
+						}
+						catch (Exception ex) {
+								return BadRequest(ex.Message);
+						}
+				}
+
+				
+				
 		}
 }

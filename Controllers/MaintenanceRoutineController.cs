@@ -221,6 +221,10 @@ namespace API_FleetService.Controllers
 																																shortName = ibr.MaintenanceItem.PresentationUnit.pu_shortName,
 																																longName = ibr.MaintenanceItem.PresentationUnit.pu_longName
 																														},
+																														category = new CategoryViewModel { 
+																																id = ibr.MaintenanceItem.mict_id,
+																																name = ibr.MaintenanceItem.MaintenanceItemCategory.mict_name
+																														},
 																														referencePrice = ibr.MaintenanceItem.mi_referencePrice,
 																														state = ibr.MaintenanceItem.mi_state,
 																														amount = ibr.mi_amount,
