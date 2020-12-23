@@ -9,7 +9,7 @@ namespace API_FleetService.Controllers
 {
     public class UsersController : ApiController
     {
-        [HttpGet]
+        [HttpPost]
         public IHttpActionResult GetAuthenticate(UserLoginViewModel userAut) //UserLoginViewModel pItem
         {
             try
@@ -50,7 +50,7 @@ namespace API_FleetService.Controllers
             {
                 var group = new Group();
                 user.group = new Group();
-                                
+
                 using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
                 {
                     // group data 
@@ -61,7 +61,7 @@ namespace API_FleetService.Controllers
                                             groupName = grp.grp_name
                                         }).FirstOrDefault();
 
-                    user.group = group;   
+                    user.group = group;
                 }
 
             }
@@ -93,6 +93,8 @@ namespace API_FleetService.Controllers
                                                {
                                                    id_module = mdl.mdl_id,
                                                    moduleName = mdl.mdl_name,
+                                                   id_moduleF = mdl.mdl_father,
+                                                   moduleDescription = mdl.mdl_description,
                                                    path = mdl.mdl_path
                                                }).FirstOrDefault();
 
@@ -109,9 +111,9 @@ namespace API_FleetService.Controllers
 
                             moduleItem.actions.Add(actionItem);
                         }
-                        
+
                         user.group.modules.Add(moduleItem);
-                    }                    
+                    }
                 }
 
             }
@@ -132,11 +134,11 @@ namespace API_FleetService.Controllers
                 {
                     //var lsUser = db.Users.Where(cl => cl.cli_state == true)
                     var lsUser = db.Users.Select(usr => new UserAccessViewModel
-                                        {
-                                            id_user = usr.usr_id,
-                                            user = usr.usr_name,
-                                            id_group = usr.grp_id
-                                        }).ToList();
+                    {
+                        id_user = usr.usr_id,
+                        user = usr.usr_name,
+                        id_group = usr.grp_id
+                    }).ToList();
 
                     return Ok(lsUser);
                 }
@@ -153,9 +155,12 @@ namespace API_FleetService.Controllers
         {
             try
             {
+                var oUserDB = new UserAccessViewModel();
+                var access = new List<GroupModuleAction>();
+
                 using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
                 {
-                    var oUserDB = db.Users.Where(us => us.usr_id == pId)
+                    oUserDB = db.Users.Where(us => us.usr_id == pId)
                             .Select(usr => new UserAccessViewModel
                             {
                                 id_user = usr.usr_id,
@@ -163,7 +168,44 @@ namespace API_FleetService.Controllers
                                 id_group = usr.grp_id
                             }).FirstOrDefault();
 
-                    return Ok(oUserDB);
+                    access = db.GroupModuleAction.Where(gma => gma.grp_id.Equals(oUserDB.id_group)).ToList();
+
+                }
+
+                oUserDB = buildGroup(oUserDB);
+
+                oUserDB = buildModulesActions(oUserDB, access);
+
+                return Ok(oUserDB);
+
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpPost]
+        public IHttpActionResult Insert(UserLoginViewModel pUser)
+        {
+            //TODO: Agregar usuario que hizo la acción
+            ResponseApiViewModel rta = new ResponseApiViewModel();
+            try
+            {
+                Users UserToInsert = UserLoginViewModel.PrepareUserToInsertDB(pUser);
+                bool UserWasInserted = UserLoginViewModel.InsertIntoDB(UserToInsert);
+
+                if (UserWasInserted)
+                {
+                    rta.response = true;
+                    rta.message = "El usuario " + pUser.user + " fue insertado correctamente en la base de datos.";
+                    return Ok(rta);
+                }
+                else
+                {
+                    rta.response = false;
+                    rta.message = "Ha ocurrido un error intentado insertar el usuario:  " + pUser.user;
+                    return BadRequest(rta.message);
                 }
 
             }
@@ -174,48 +216,18 @@ namespace API_FleetService.Controllers
         }
 
         [HttpPost]
-		public IHttpActionResult Insert(UserLoginViewModel pUser)
-		{
-			//TODO: Agregar usuario que hizo la acción
-			ResponseApiViewModel rta = new ResponseApiViewModel();
-			try
-			{
-				Users UserToInsert = UserLoginViewModel.PrepareUserToInsertDB(pUser);
-				bool UserWasInserted = UserLoginViewModel.InsertIntoDB(UserToInsert);
+        public IHttpActionResult Update(UserLoginViewModel pUser)
+        {
+            try
+            {
+                ResponseApiViewModel rta = new ResponseApiViewModel();
+                using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+                {
 
-				if (UserWasInserted)
-				{
-					rta.response = true;
-					rta.message = "El usuario " + pUser.user + " fue insertado correctamente en la base de datos.";
-					return Ok(rta);
-				}
-				else
-				{
-					rta.response = false;
-					rta.message = "Ha ocurrido un error intentado insertar el usuario:  " + pUser.user;
-					return BadRequest(rta.message);
-				}
-
-			}
-			catch (Exception ex)
-			{
-				return BadRequest(ex.Message);
-			}
-		}
-
-		[HttpPost]
-		public IHttpActionResult Update(UserLoginViewModel pUser)
-		{			
-			try
-			{
-				ResponseApiViewModel rta = new ResponseApiViewModel();
-				using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
-				{
-
-					var oUserDB = db.Users.Where(us => us.usr_id == pUser.idUser || us.usr_name == pUser.user)
-																	.FirstOrDefault();
-					if (oUserDB != null)
-					{
+                    var oUserDB = db.Users.Where(us => us.usr_id == pUser.idUser || us.usr_name == pUser.user)
+                                                                    .FirstOrDefault();
+                    if (oUserDB != null)
+                    {
                         if (pUser.user.Trim() == "")
                         {
                             throw new Exception("El name del usuario no es válido");
@@ -230,68 +242,68 @@ namespace API_FleetService.Controllers
                         {
                             throw new Exception("El usuario debe pertenecer a un grupo");
                         }
-                                                
+
                         oUserDB.usr_name = pUser.user;
                         oUserDB.usr_password = pUser.password;
                         oUserDB.grp_id = pUser.group;
 
-						db.SaveChanges();
-						rta.response = true;
-						rta.message = "Se ha actualizado el usuario: " + pUser.user;
-						return Ok(rta);
-					}
-					else
-					{
-						rta.response = false;
-						rta.message = "No se encontró el usuario: " + pUser.user + " en la base de datos, por favor rectifique los datos";
-						return BadRequest(rta.message);
-					}
+                        db.SaveChanges();
+                        rta.response = true;
+                        rta.message = "Se ha actualizado el usuario: " + pUser.user;
+                        return Ok(rta);
+                    }
+                    else
+                    {
+                        rta.response = false;
+                        rta.message = "No se encontró el usuario: " + pUser.user + " en la base de datos, por favor rectifique los datos";
+                        return BadRequest(rta.message);
+                    }
 
-				}
+                }
 
-			}
-			catch (Exception ex)
-			{
-				return BadRequest(ex.Message);
-			}
-		}
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
 
-		[HttpPost]
-		public IHttpActionResult Delete(UserLoginViewModel pUser)
-		{
-			//TODO: Agregar usuario que hizo la acción
-			try
-			{
-				ResponseApiViewModel rta = new ResponseApiViewModel();
-				using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
-				{                    					
+        [HttpPost]
+        public IHttpActionResult Delete(UserLoginViewModel pUser)
+        {
+            //TODO: Agregar usuario que hizo la acción
+            try
+            {
+                ResponseApiViewModel rta = new ResponseApiViewModel();
+                using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+                {
                     var oUserDB = db.Users.Where(us => us.usr_id == pUser.idUser).FirstOrDefault();
                     if (oUserDB != null)
-					{
+                    {
                         //oUserDB.cli_document = "";
                         //oUserDB.cli_state = false;
                         //oUserDB.cli_deleteDate = DateTime.Now;
                         db.Users.Remove(oUserDB);
-						db.SaveChanges();
-						rta.response = true;
-						rta.message = "Se ha eliminado el usuario: " + oUserDB.usr_name + " de la base de datos";
-						return Ok(rta);
-					}
-					else
-					{
-						rta.response = false;
-						rta.message = "No se encontró el usuario por lo tanto no se puede eliminar";
-						return BadRequest(rta.message);
-					}
+                        db.SaveChanges();
+                        rta.response = true;
+                        rta.message = "Se ha eliminado el usuario: " + oUserDB.usr_name + " de la base de datos";
+                        return Ok(rta);
+                    }
+                    else
+                    {
+                        rta.response = false;
+                        rta.message = "No se encontró el usuario por lo tanto no se puede eliminar";
+                        return BadRequest(rta.message);
+                    }
 
-				}
+                }
 
-			}
-			catch (Exception ex)
-			{
-				return BadRequest(ex.Message);
-			}
-		}
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
 
-	}
+    }
 }

@@ -29,7 +29,11 @@ namespace API_FleetService.ViewModels
     {
         public int id_module { get; set; }
 
+        public int id_moduleF { get; set; }
+
         public string moduleName { get; set; }
+
+        public string moduleDescription { get; set; }
 
         public string path { get; set; }
 

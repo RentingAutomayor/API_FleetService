@@ -100,3 +100,6 @@ D:\CASALLAS\API\API_FleetService\obj\Debug\API_FleetService.csproj.CopyComplete
 D:\CASALLAS\API\API_FleetService\obj\Debug\API_FleetService.dll
 D:\CASALLAS\API\API_FleetService\obj\Debug\API_FleetService.pdb
 D:\CASALLAS\API\API_FleetService\obj\Debug\API_FleetService.csprojAssemblyReference.cache
+D:\CASALLAS\API\API_FleetService\bin\System.Web.Cors.dll
+D:\CASALLAS\API\API_FleetService\bin\System.Web.Http.Cors.dll
+D:\CASALLAS\API\API_FleetService\bin\System.Web.Http.Cors.xml

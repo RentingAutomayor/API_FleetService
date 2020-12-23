@@ -33,7 +33,7 @@ namespace API_FleetService.ViewModels
         {
             if (pUser.user.Trim() == "")
             {
-                throw new Exception("El name del usuario no es válido");
+                throw new Exception("El nombre del usuario no es válido");
             }
 
             if (pUser.password.Trim() == "")
