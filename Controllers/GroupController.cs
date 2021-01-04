@@ -16,45 +16,18 @@ namespace API_FleetService.Controllers
         {
             try
             {
+                var lsGroup = new List<Group>();
+
                 using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
                 {
-                    var lsGroup = (from grp in db.Groups
-                                   select new
-                                   {
-                                       id_group = grp.grp_id,
-                                       groupName = grp.grp_name,
-                                       modules = from mdl in db.Modules
-                                                 join gma in db.GroupModuleAction on mdl.mdl_id equals gma.mdl_id
-                                                 where gma.grp_id == grp.grp_id
-                                                 group mdl by mdl.mdl_id into moduls
-                                                 select new
-                                                 {
-                                                     id_module = moduls.Key,
-                                                     modulsGroup = moduls.ToList()
-                                                 }
-
-                                   }).ToList();
+                    lsGroup = db.Groups.Select(grp => new Group
+                                       {
+                                           id_group = grp.grp_id,
+                                           groupName = grp.grp_name
+                                       }).ToList();
 
 
-                    //{
-
-                    //    id_module = mdl.mdl_id,
-                    //                                 moduleName = mdl.mdl_name,
-                    //                                 path = mdl.mdl_path
-                    //                             }
-
-                    //actions = from act in db.Actions
-                    //          join gma in db.GroupModuleAction on act.act_id equals gma.act_id
-                    //          where gma.grp_id == grp.grp_id
-                    //          select new
-                    //          {
-                    //              id_action = act.act_id,
-                    //              actionName = act.act_description
-                    //          }
-
-
-                    //lsGroup = lsGroup.GroupBy(mdl => mdl.modules).ToList();
-
+                    lsGroup = buildModulesActions(lsGroup);
 
                     return Ok(lsGroup);
                 }
@@ -64,6 +37,65 @@ namespace API_FleetService.Controllers
             {
                 return BadRequest(ex.Message);
             }
+        }
+
+        private List<Group> buildModulesActions(List<Group> groups)
+        {
+            try
+            {
+                var access = new List<GroupModuleAction>();
+                // trae todas las relaciones de grupos y modulos posibles
+                using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+                {
+                    access = db.GroupModuleAction.ToList();                    
+                }
+
+                var groupMA = access.GroupBy(g => g.mdl_id);
+
+                foreach (var group in groups)
+                {
+                    group.modules = new List<Module>();
+
+                    using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+                    {
+                        foreach (var module in groupMA)
+                        {
+                            var moduleItem = db.Modules.Where(mdl => mdl.mdl_id == module.Key)
+                                              .Select(mdl => new Module
+                                              {
+                                                  id_module = mdl.mdl_id,
+                                                  moduleName = mdl.mdl_name,
+                                                  id_moduleF = mdl.mdl_father,
+                                                  moduleDescription = mdl.mdl_description,
+                                                  path = mdl.mdl_path
+                                              }).FirstOrDefault();
+
+                            moduleItem.actions = new List<ActionModule>();
+
+                            foreach (var action in module)
+                            {
+                                var actionItem = db.Actions.Where(act => act.act_id == action.act_id)
+                                                    .Select(act => new ActionModule
+                                                    {
+                                                        id_action = act.act_id,
+                                                        actionName = act.act_name
+                                                    }).FirstOrDefault();
+
+                                moduleItem.actions.Add(actionItem);
+                            }
+
+                            group.modules.Add(moduleItem);
+                        }
+                    }
+                }
+
+            }
+            catch (Exception ex)
+            {
+                return new List<Group>();
+            }
+
+            return groups;
         }
 
         [HttpPost]

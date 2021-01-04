@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using System.Web.Http;
 using API_FleetService.ViewModels;
 using DAO_FleetService;
@@ -20,6 +23,8 @@ namespace API_FleetService.Controllers
 
                 using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
                 {
+                    var decodeData = decode(userAut.password);
+                    userAut.password = decodeData;
                     user = db.Users.Where(usr => usr.usr_name.Equals(userAut.user) && usr.usr_password.Equals(userAut.password))
                                         .Select(usr => new UserAccessViewModel
                                         {
@@ -28,7 +33,19 @@ namespace API_FleetService.Controllers
                                             id_group = usr.grp_id
                                         }).FirstOrDefault();
 
+
+                    if (user == null)
+                    {
+                        var empty = new UserLoginViewModel();
+                        return Ok(empty);
+                    }
+
                     access = db.GroupModuleAction.Where(gma => gma.grp_id.Equals(user.id_group)).ToList();
+
+                    if (access == null)
+                    {
+                        return Ok(user);
+                    }
                 }
 
                 user = buildGroup(user);
@@ -43,6 +60,14 @@ namespace API_FleetService.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
+        public static string decode(string pass)
+        {
+            byte[] encodeDataAsBytes = System.Convert.FromBase64String(pass);
+            string passAns = System.Text.ASCIIEncoding.ASCII.GetString(encodeDataAsBytes);
+            return passAns;
+        }
+
 
         private UserAccessViewModel buildGroup(UserAccessViewModel user)
         {
