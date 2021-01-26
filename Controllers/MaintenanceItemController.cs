@@ -84,14 +84,18 @@ namespace API_FleetService.Controllers
 				}
 
 				[HttpGet]
-				public IHttpActionResult Get()
+				public IHttpActionResult Get(int dealer_id)
 				{
 						try
 						{
+
 								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
 								{
+										IEnumerable<MaintenanceItemViewModel> lsMaintenanceItems;
 
-										var lsMaintenanceItems = db.MaintenanceItem.Where(mi => mi.mi_state == true)
+										if (dealer_id > 0)
+										{
+												lsMaintenanceItems = db.MaintenanceItem.Where(mi => mi.mi_state == true && (mi.deal_id == dealer_id || mi.deal_id == null))
 																								.Select(mi => new MaintenanceItemViewModel
 																								{
 																										id = mi.mi_id,
@@ -116,11 +120,67 @@ namespace API_FleetService.Controllers
 																										} : null,
 																										referencePrice = mi.mi_referencePrice,
 																										state = mi.mi_state,
+																										handleTax = mi.mi_handleTax,
 																										registrationDate = mi.mi_registrationDate
 																								}).ToList()
 																								.Take(100)
 																								.OrderBy(mi => mi.type.name)
 																								.ThenBy(mi => mi.name);
+										}
+										else {
+												lsMaintenanceItems = db.MaintenanceItem.Where(mi => mi.mi_state == true)
+																										.Select(mi => new MaintenanceItemViewModel
+																										{
+																												id = mi.mi_id,
+																												code = mi.mi_code,
+																												name = mi.mi_name,
+																												description = mi.mi_description,
+																												type = new TypeOfMaintenanceItemViewModel
+																												{
+																														id = mi.tmi_id,
+																														name = mi.TypeOfMaintenanceItem.tmi_name
+																												},
+																												presentationUnit = new PresentationUnitViewModel
+																												{
+																														id = mi.pu_id,
+																														shortName = mi.PresentationUnit.pu_shortName,
+																														longName = mi.PresentationUnit.pu_longName
+																												},
+																												category = (mi.mict_id != null) ? new CategoryViewModel
+																												{
+																														id = mi.mict_id,
+																														name = mi.MaintenanceItemCategory.mict_name
+																												} : null,
+																												referencePrice = mi.mi_referencePrice,
+																												state = mi.mi_state,
+																												handleTax = mi.mi_handleTax,
+																												registrationDate = mi.mi_registrationDate
+																										}).ToList()
+																										.Take(100)
+																										.OrderBy(mi => mi.type.name)
+																										.ThenBy(mi => mi.name);
+										}
+										
+
+
+										foreach (var maintenanceItem in lsMaintenanceItems)
+										{
+												if (maintenanceItem.handleTax == true) {
+														var lsTaxes = db.TaxesByMaintenanceItem.Where(tx => tx.mi_id == maintenanceItem.id)
+																																	.Select(tx => new TaxViewModel
+																																	{
+																																			id = tx.tax_id,
+																																			name = tx.Taxes.tax_name,
+																																			description = tx.Taxes.tax_desccription,
+																																			percentValue = tx.Taxes.tax_percentValue,
+																																			registrationDate = tx.Taxes.tax_registrationDate
+																																	}).ToList();
+
+														if (lsTaxes != null) {
+																maintenanceItem.lsTaxes = lsTaxes;
+														}
+												}
+										}
 
 
 										return Ok(lsMaintenanceItems);
@@ -167,6 +227,7 @@ namespace API_FleetService.Controllers
 																										} : null,
 																										referencePrice = mi.mi_referencePrice,
 																										state = mi.mi_state,
+																										handleTax = mi.mi_handleTax,
 																										registrationDate = mi.mi_registrationDate
 																								}).FirstOrDefault();
 
@@ -190,6 +251,24 @@ namespace API_FleetService.Controllers
 																														brand = new BrandViewModel { id = mi.VehicleModel.vb_id, name = mi.VehicleModel.VehicleBrand.vb_name },
 																														type = new VehicleTypeViewModel { id = mi.VehicleModel.vt_id, name = mi.VehicleModel.VehicleType.vt_name }
 																												}).ToList();
+
+										if (maintenanceItem.handleTax == true)
+										{
+												var lsTaxes = db.TaxesByMaintenanceItem.Where(tx => tx.mi_id == maintenanceItem.id)
+																															.Select(tx => new TaxViewModel
+																															{
+																																	id = tx.tax_id,
+																																	name = tx.Taxes.tax_name,
+																																	description = tx.Taxes.tax_desccription,
+																																	percentValue = tx.Taxes.tax_percentValue,
+																																	registrationDate = tx.Taxes.tax_registrationDate
+																															}).ToList();
+
+												if (lsTaxes != null)
+												{
+														maintenanceItem.lsTaxes = lsTaxes;
+												}
+										}
 
 
 										return Ok(maintenanceItem);
@@ -254,7 +333,7 @@ namespace API_FleetService.Controllers
 
 
 				[HttpGet]
-				public IHttpActionResult GetItemsByVehicleModel(int pVehicleModel_id)
+				public IHttpActionResult GetItemsByVehicleModel(int pVehicleModel_id = 0)
 				{
 						try
 						{
@@ -295,7 +374,8 @@ namespace API_FleetService.Controllers
 												lsItemConfigurated.Add((int)item.mi_id);
 										}
 
-										var lsMaintenanceItems = db.MaintenanceItem.Where(mi => mi.mi_state == true && lsItemConfigurated.Any(item => item == mi.mi_id))
+										var lsMaintenanceItems = db.MaintenanceItem
+																								.Where(mi => mi.mi_state == true && lsItemConfigurated.Any(item => item == mi.mi_id) && (mi.deal_id == null ))
 																								.Select(mi => new MaintenanceItemViewModel
 																								{
 																										id = mi.mi_id,
@@ -320,8 +400,32 @@ namespace API_FleetService.Controllers
 																										} : null,
 																										referencePrice = mi.mi_referencePrice,
 																										state = mi.mi_state,
+																										handleTax = mi.mi_handleTax,
 																										registrationDate = mi.mi_registrationDate
 																								}).ToList();
+
+
+										foreach (var maintenanceItem in lsMaintenanceItems)
+										{
+												if (maintenanceItem.handleTax == true)
+												{
+														var lsTaxes = db.TaxesByMaintenanceItem.Where(tx => tx.mi_id == maintenanceItem.id)
+																																	.Select(tx => new TaxViewModel
+																																	{
+																																			id = tx.tax_id,
+																																			name = tx.Taxes.tax_name,
+																																			description = tx.Taxes.tax_desccription,
+																																			percentValue = tx.Taxes.tax_percentValue,
+																																			registrationDate = tx.Taxes.tax_registrationDate
+																																	}).ToList();
+
+														if (lsTaxes != null)
+														{
+																maintenanceItem.lsTaxes = lsTaxes;
+														}
+												}
+											
+										}
 
 
 										return Ok(lsMaintenanceItems);
@@ -363,6 +467,29 @@ namespace API_FleetService.Controllers
 														{
 																MaintenanceItemViewModel.InsertMaintenanceItemByVehicleModel(itemId, lsVehicleModel);
 														}
+
+
+														if (pItem.handleTax == true) {
+																foreach (var tax in pItem.lsTaxes)
+																{
+																		TaxesByMaintenanceItem txmi = new TaxesByMaintenanceItem();
+
+																		txmi.mi_id = (int)itemId;
+																		txmi.tax_id = (int)tax.id;
+																		txmi.txmi_registrationDate = DateTime.Now;
+
+																		db.TaxesByMaintenanceItem.Add(txmi);
+																		db.SaveChanges();
+																}
+														}
+
+														if (pItem.dealer != null) {
+																var itemTemp = db.MaintenanceItem.Where(mi => mi.mi_id == itemId).FirstOrDefault();
+																itemTemp.deal_id = pItem.dealer.id;
+																db.SaveChanges();
+														}
+														
+
 												}
 
 
@@ -393,8 +520,9 @@ namespace API_FleetService.Controllers
 										var oItemDB = db.MaintenanceItem.Where(it => it.mi_id == pItem.id).FirstOrDefault();
 										oItemDB.mi_code = pItem.code.ToUpper();
 										oItemDB.mi_name = pItem.name.ToUpper();
-										oItemDB.mi_description = pItem.description.ToUpper();
+										oItemDB.mi_description = (pItem.description != null) ?pItem.description.ToUpper():"";
 										oItemDB.mi_referencePrice = pItem.referencePrice;
+										oItemDB.mi_handleTax = (bool)pItem.handleTax;
 
 										if (pItem.type == null)
 										{
@@ -418,7 +546,13 @@ namespace API_FleetService.Controllers
 										{
 												oItemDB.mict_id = (int)pItem.category.id;
 										}
-
+										
+										if (pItem.dealer != null)
+										{
+												if (oItemDB.deal_id != null) {
+														oItemDB.deal_id = pItem.dealer.id;
+												}
+										}
 										oItemDB.mi_updateDate = DateTime.Now;
 										db.SaveChanges();
 
@@ -435,6 +569,23 @@ namespace API_FleetService.Controllers
 										if (lsVehicleModel.Count > 0)
 										{
 												MaintenanceItemViewModel.InsertMaintenanceItemByVehicleModel((int)pItem.id, lsVehicleModel);
+										}
+										//First remove the old taxes
+										this.deleteTaxesByItem((int)pItem.id);
+										//Update the taxes
+										if (pItem.handleTax == true)
+										{
+												foreach (var tax in pItem.lsTaxes)
+												{
+														TaxesByMaintenanceItem txmi = new TaxesByMaintenanceItem();
+
+														txmi.mi_id = (int)pItem.id;
+														txmi.tax_id = (int)tax.id;
+														txmi.txmi_registrationDate = DateTime.Now;
+
+														db.TaxesByMaintenanceItem.Add(txmi);
+														db.SaveChanges();
+												}
 										}
 
 										rta.response = true;
@@ -544,6 +695,12 @@ namespace API_FleetService.Controllers
 										ResponseApiViewModel rta = new ResponseApiViewModel();
 
 										var lsOldPrices = db.PricesByDealer.Where(pbd => pbd.deal_id == pricesByDealer.dealer.id).ToList();
+
+										IEnumerable<MaintenanceItemViewModel> lsNewItems =  from lsItems in pricesByDealer.lsMaintenanceItems
+																																				where !lsOldPrices.Any(itm => itm.mi_id == lsItems.id)
+																																				select lsItems;
+
+
 										if (lsOldPrices.Count > 0)
 										{
 												foreach (var oldPrice in lsOldPrices)
@@ -554,7 +711,15 @@ namespace API_FleetService.Controllers
 																PricesByDealer priceByDealer = db.PricesByDealer.Where(pbd => pbd.pbd_id == oldPrice.pbd_id).FirstOrDefault();
 																this.setDataPrice((int)pricesByDealer.dealer.id, (int)oldPrice.mi_id, (float)newPrice.referencePrice, "UPDATE", ref priceByDealer);
 																db.SaveChanges();
-														}
+														}														
+												}
+
+
+												foreach (var item in lsNewItems) {
+														PricesByDealer priceByDealer = new PricesByDealer();
+														this.setDataPrice((int)pricesByDealer.dealer.id, (int)item.id, (float)item.referencePrice, "INSERT", ref priceByDealer);
+														db.PricesByDealer.Add(priceByDealer);
+														db.SaveChanges();
 												}
 										}
 										else
@@ -756,6 +921,53 @@ namespace API_FleetService.Controllers
 						}
 				}
 
+
+				[HttpGet]
+				public IHttpActionResult GetTaxesList() {
+
+						try
+						{
+								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+								{
+										var lsTaxes = db.Taxes.Where(tx => tx.tax_state == true)
+												.Select(tx => new TaxViewModel
+												{
+														id = tx.tax_id,
+														name = tx.tax_name,
+														description = tx.tax_desccription,
+														percentValue = tx.tax_percentValue,
+														registrationDate = tx.tax_registrationDate
+												}).ToList();
+
+										return Ok(lsTaxes);
+								}
+						}
+						catch (Exception ex)
+						{
+								return BadRequest(ex.Message);
+						}
+				}
+
+
+				private bool deleteTaxesByItem(int item_id) {
+						try
+						{
+								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+								{
+										var lsTaxes = db.TaxesByMaintenanceItem.Where(tx => tx.mi_id == item_id).ToList();
+										db.TaxesByMaintenanceItem.RemoveRange(lsTaxes);
+										db.SaveChanges();
+
+										return true;
+								}
+						}
+						catch (Exception)
+						{
+
+								return false;
+						}
+					
+				}
 
 
 

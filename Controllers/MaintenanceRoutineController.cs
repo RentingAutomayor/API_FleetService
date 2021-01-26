@@ -38,46 +38,90 @@ namespace API_FleetService.Controllers
 				}
 
 				[HttpGet]
-				public IHttpActionResult GetMaintenanceRoutines()
+				public IHttpActionResult GetMaintenanceRoutines(int vehicleModel_id = 0, int frequency_id = 0)
 				{
 						try
 						{
 								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
 								{
-										var lsMaintenanceRoutines = db.maintenanceRoutine.Where(mr => mr.mr_state == true)
-																												.Select(mr => new MaintenanceRoutineViewModel
-																												{
-																														id = mr.mr_id,
-																														name = mr.mr_name,
-																														description = mr.mr_description,
-																														vehicleModel = new VehicleModelViewModel
-																														{
-																																id = mr.vm_id,
-																																shortName = mr.VehicleModel.vm_shortName,
-																																longName = mr.VehicleModel.vm_longName,
-																																brand = new BrandViewModel
-																																{
-																																		id = mr.VehicleModel.vb_id,
-																																		name = mr.VehicleModel.VehicleBrand.vb_name
-																																},
-																																type = new VehicleTypeViewModel
-																																{
-																																		id = mr.VehicleModel.vt_id,
-																																		name = mr.VehicleModel.VehicleType.vt_name
-																																}
-																														},
-																														frequency = new FrequencyViewModel
-																														{
-																																id = mr.fq_id,
-																																name = mr.frequency.fq_name
-																														},
-																														state = mr.mr_state,
-																														referencePrice = mr.mr_referencePrice,
-																														registrationDate = mr.mr_registrationDate
+										IEnumerable<MaintenanceRoutineViewModel> lsMaintenanceRoutines = null;
 
-																												}).ToList()
-																												.Take(100);
+										if (vehicleModel_id == 0 && frequency_id == 0)
+										{
+
+												lsMaintenanceRoutines = db.maintenanceRoutine.Where(mr => mr.mr_state == true)
+																														.Select(mr => new MaintenanceRoutineViewModel
+																														{
+																																id = mr.mr_id,
+																																name = mr.mr_name,
+																																description = mr.mr_description,
+																																vehicleModel = new VehicleModelViewModel
+																																{
+																																		id = mr.vm_id,
+																																		shortName = mr.VehicleModel.vm_shortName,
+																																		longName = mr.VehicleModel.vm_longName,
+																																		brand = new BrandViewModel
+																																		{
+																																				id = mr.VehicleModel.vb_id,
+																																				name = mr.VehicleModel.VehicleBrand.vb_name
+																																		},
+																																		type = new VehicleTypeViewModel
+																																		{
+																																				id = mr.VehicleModel.vt_id,
+																																				name = mr.VehicleModel.VehicleType.vt_name
+																																		}
+																																},
+																																frequency = new FrequencyViewModel
+																																{
+																																		id = mr.fq_id,
+																																		name = mr.frequency.fq_name
+																																},
+																																state = mr.mr_state,
+																																referencePrice = mr.mr_referencePrice,
+																																registrationDate = mr.mr_registrationDate
+
+																														}).ToList()
+																														.Take(100);
+
+										}
+										else {
+												lsMaintenanceRoutines = db.maintenanceRoutine.Where(mr => mr.mr_state == true  &&( mr.vm_id == vehicleModel_id || mr.frequency.fq_id == frequency_id))
+																																.Select(mr => new MaintenanceRoutineViewModel
+																																{
+																																		id = mr.mr_id,
+																																		name = mr.mr_name,
+																																		description = mr.mr_description,
+																																		vehicleModel = new VehicleModelViewModel
+																																		{
+																																				id = mr.vm_id,
+																																				shortName = mr.VehicleModel.vm_shortName,
+																																				longName = mr.VehicleModel.vm_longName,
+																																				brand = new BrandViewModel
+																																				{
+																																						id = mr.VehicleModel.vb_id,
+																																						name = mr.VehicleModel.VehicleBrand.vb_name
+																																				},
+																																				type = new VehicleTypeViewModel
+																																				{
+																																						id = mr.VehicleModel.vt_id,
+																																						name = mr.VehicleModel.VehicleType.vt_name
+																																				}
+																																		},
+																																		frequency = new FrequencyViewModel
+																																		{
+																																				id = mr.fq_id,
+																																				name = mr.frequency.fq_name
+																																		},
+																																		state = mr.mr_state,
+																																		referencePrice = mr.mr_referencePrice,
+																																		registrationDate = mr.mr_registrationDate
+
+																																}).ToList()
+																																.Take(100);
+										}
+
 										return Ok(lsMaintenanceRoutines);
+
 								}
 						}
 						catch (Exception ex)
@@ -142,12 +186,36 @@ namespace API_FleetService.Controllers
 																														id = ibr.MaintenanceItem.pu_id,
 																														shortName = ibr.MaintenanceItem.PresentationUnit.pu_shortName,
 																														longName = ibr.MaintenanceItem.PresentationUnit.pu_longName
-																												},																												
+																												},
 																												referencePrice = ibr.MaintenanceItem.mi_referencePrice,
 																												state = ibr.MaintenanceItem.mi_state,
 																												amount = ibr.mi_amount,
+																												handleTax = ibr.MaintenanceItem.mi_handleTax,
 																												registrationDate = ibr.MaintenanceItem.mi_registrationDate
 																										}).ToList();
+
+										foreach (var maintenanceItem in oLsItems)
+										{
+												if (maintenanceItem.handleTax == true)
+												{
+														var lsTaxes = db.TaxesByMaintenanceItem.Where(tx => tx.mi_id == maintenanceItem.id)
+																																	.Select(tx => new TaxViewModel
+																																	{
+																																			id = tx.tax_id,
+																																			name = tx.Taxes.tax_name,
+																																			description = tx.Taxes.tax_desccription,
+																																			percentValue = tx.Taxes.tax_percentValue,
+																																			registrationDate = tx.Taxes.tax_registrationDate
+																																	}).ToList();
+
+														if (lsTaxes != null)
+														{
+																maintenanceItem.lsTaxes = lsTaxes;
+														}
+												}
+
+										}
+
 
 										oRoutine.lsItems = oLsItems;
 
@@ -228,8 +296,31 @@ namespace API_FleetService.Controllers
 																														referencePrice = ibr.MaintenanceItem.mi_referencePrice,
 																														state = ibr.MaintenanceItem.mi_state,
 																														amount = ibr.mi_amount,
+																														handleTax = ibr.MaintenanceItem.mi_handleTax,
 																														registrationDate = ibr.MaintenanceItem.mi_registrationDate
 																												}).ToList();
+
+												foreach (var maintenanceItem in oLsItems)
+												{
+														if (maintenanceItem.handleTax == true)
+														{
+																var lsTaxes = db.TaxesByMaintenanceItem.Where(tx => tx.mi_id == maintenanceItem.id)
+																																			.Select(tx => new TaxViewModel
+																																			{
+																																					id = tx.tax_id,
+																																					name = tx.Taxes.tax_name,
+																																					description = tx.Taxes.tax_desccription,
+																																					percentValue = tx.Taxes.tax_percentValue,
+																																					registrationDate = tx.Taxes.tax_registrationDate
+																																			}).ToList();
+
+																if (lsTaxes != null)
+																{
+																		maintenanceItem.lsTaxes = lsTaxes;
+																}
+														}
+
+												}
 
 												oRoutine.lsItems = oLsItems;
 										}
@@ -403,6 +494,34 @@ namespace API_FleetService.Controllers
 										return Ok(rta);
 								}
 						}
+						catch (Exception ex)
+						{
+								return BadRequest(ex.Message);
+						}
+				}
+
+
+				[HttpGet]
+				public IHttpActionResult ValidateRoutineAndFrequency(int vehicleModel_id, int frequency_id ) {
+						try
+						{
+								using (DB_FleetServiceEntities db  = new DB_FleetServiceEntities())
+								{
+										var rta = new ResponseApiViewModel();
+										var oMaintenanceRoutine = db.maintenanceRoutine.Where(mr => mr.mr_state == true && mr.vm_id == vehicleModel_id && mr.fq_id == frequency_id).FirstOrDefault();
+										if (oMaintenanceRoutine != null)
+										{
+												rta.response = false;
+												rta.message = "Ya existe una rutina para la línea seleccionada con ese kilometraje";
+										}
+										else {
+												rta.response = true;
+												rta.message = "";
+										}
+
+										return Ok(rta);
+								}
+						}		
 						catch (Exception ex)
 						{
 								return BadRequest(ex.Message);

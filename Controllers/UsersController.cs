@@ -24,8 +24,15 @@ namespace API_FleetService.Controllers
                                         .Select(usr => new UserAccessViewModel
                                         {
                                             id_user = usr.usr_id,
+                                            name = usr.usr_firstName,
+                                            lastName = usr.usr_lastName,
                                             user = usr.usr_name,
-                                            id_group = usr.grp_id
+                                            id_group = usr.grp_id,
+                                            company = new ViewModels.Company { 
+                                                id  = (usr.cpn_id != null) ? usr.cpn_id : ((usr.cli_id != null) ? usr.cli_id : (usr.deal_id != null) ? usr.deal_id : 0 ),
+                                                type =  (usr.cpn_id != null) ? CompanyType.COMPANY : ((usr.cli_id != null) ? CompanyType.CLIENT : (usr.deal_id != null) ? CompanyType.DEALER : 0)
+                                            }
+                                            
                                         }).FirstOrDefault();
 
                     access = db.GroupModuleAction.Where(gma => gma.grp_id.Equals(user.id_group)).ToList();

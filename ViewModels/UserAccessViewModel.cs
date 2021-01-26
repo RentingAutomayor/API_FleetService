@@ -8,12 +8,16 @@ namespace API_FleetService.ViewModels
     public class UserAccessViewModel
     {
         public int id_user { get; set; }
+        public string name { get; set; }
 
+        public string lastName { get; set; }
         public string user { get; set; }
 
         public virtual int id_group { get; set; }
 
         public Group group { get; set; }
+
+        public Company company { get; set; }
     }
 
     public class Group
@@ -45,5 +49,16 @@ namespace API_FleetService.ViewModels
         public int id_action { get; set; }
 
         public string actionName { get; set; }
+    }
+
+    public class Company {
+        public Nullable<int> id;
+        public CompanyType type;
+    }
+
+    public enum CompanyType { 
+        COMPANY = 1,
+        CLIENT = 2,
+        DEALER = 3
     }
 }

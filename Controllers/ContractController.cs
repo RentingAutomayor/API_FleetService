@@ -64,55 +64,151 @@ namespace API_FleetService.Controllers
 						}
 				}
 				[HttpGet]
-				public IHttpActionResult Get()
+				public IHttpActionResult Get(int dealer_id = 0, int client_id=0)
 				{
 						try
 						{
 								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
 								{
-										var lsContracts = db.Contract.Where(ct => ct.cntr_state == true)
-																				.Select(ct => new ContractViewModel
-																				{
-																						id = ct.cntr_id,
-																						consecutive = ct.cntr_consecutive,
-																						code = ct.cntr_code,
-																						name = ct.cntr_name,
-																						observation = ct.cntr_observation,
-																						dealer = new DealerViewModel
+										IEnumerable<ContractViewModel> lsContracts = null;
+
+										if (dealer_id == 0 && client_id == 0)
+										{
+												lsContracts = db.Contract.Where(ct => ct.cntr_state == true)
+																						.Select(ct => new ContractViewModel
 																						{
-																								id = ct.deal_id,
-																								document = ct.Dealer.deal_document,
-																								name = ct.Dealer.deal_name
-																						},
-																						client = new ClientViewModel
-																						{
-																								id = ct.cli_id,
-																								document = ct.Client.cli_document,
-																								name = ct.Client.cli_name
-																						},
-																						contractState = new ContractStateViewModel
-																						{
-																								id = ct.cntrst_id,
-																								name = ct.ContractState.cntrst_name,
-																								description = ct.ContractState.cntrst_description
-																						},
-																						discountType = new DiscountTypeViewModel
-																						{
-																								id = ct.dst_id,
-																								name = ct.DiscountType.dst_name
-																						},
-																						discountValue = ct.cntr_discountValue,
-																						amountOfMaintenances = ct.cntr_amountOfMaintenances,
-																						amountVehicles = ct.cntr_amountVehicles,
-																						startingDate = ct.cntr_startingDate,
-																						endingDate = ct.cntr_endingDate,
-																						duration = ct.cntr_duration,
-																						registrationDate = ct.cntr_registrationDate
-																				}).OrderByDescending(ct => ct.registrationDate)
-																				.ToList()
-																				.Take(100);
+																								id = ct.cntr_id,
+																								consecutive = ct.cntr_consecutive,
+																								code = ct.cntr_code,
+																								name = ct.cntr_name,
+																								observation = ct.cntr_observation,
+																								dealer = new DealerViewModel
+																								{
+																										id = ct.deal_id,
+																										document = ct.Dealer.deal_document,
+																										name = ct.Dealer.deal_name
+																								},
+																								client = new ClientViewModel
+																								{
+																										id = ct.cli_id,
+																										document = ct.Client.cli_document,
+																										name = ct.Client.cli_name
+																								},
+																								contractState = new ContractStateViewModel
+																								{
+																										id = ct.cntrst_id,
+																										name = ct.ContractState.cntrst_name,
+																										description = ct.ContractState.cntrst_description
+																								},
+																								discountType = new DiscountTypeViewModel
+																								{
+																										id = ct.dst_id,
+																										name = ct.DiscountType.dst_name
+																								},
+																								discountValue = ct.cntr_discountValue,
+																								amountOfMaintenances = ct.cntr_amountOfMaintenances,
+																								amountVehicles = ct.cntr_amountVehicles,
+																								startingDate = ct.cntr_startingDate,
+																								endingDate = ct.cntr_endingDate,
+																								duration = ct.cntr_duration,
+																								registrationDate = ct.cntr_registrationDate
+																						}).OrderByDescending(ct => ct.registrationDate)
+																						.ToList()
+																						.Take(100);
+												
+										}
+										else if (dealer_id > 0) {
+												lsContracts = db.Contract.Where(ct => ct.cntr_state == true && ct.deal_id == dealer_id)
+																					.Select(ct => new ContractViewModel
+																					{
+																							id = ct.cntr_id,
+																							consecutive = ct.cntr_consecutive,
+																							code = ct.cntr_code,
+																							name = ct.cntr_name,
+																							observation = ct.cntr_observation,
+																							dealer = new DealerViewModel
+																							{
+																									id = ct.deal_id,
+																									document = ct.Dealer.deal_document,
+																									name = ct.Dealer.deal_name
+																							},
+																							client = new ClientViewModel
+																							{
+																									id = ct.cli_id,
+																									document = ct.Client.cli_document,
+																									name = ct.Client.cli_name
+																							},
+																							contractState = new ContractStateViewModel
+																							{
+																									id = ct.cntrst_id,
+																									name = ct.ContractState.cntrst_name,
+																									description = ct.ContractState.cntrst_description
+																							},
+																							discountType = new DiscountTypeViewModel
+																							{
+																									id = ct.dst_id,
+																									name = ct.DiscountType.dst_name
+																							},
+																							discountValue = ct.cntr_discountValue,
+																							amountOfMaintenances = ct.cntr_amountOfMaintenances,
+																							amountVehicles = ct.cntr_amountVehicles,
+																							startingDate = ct.cntr_startingDate,
+																							endingDate = ct.cntr_endingDate,
+																							duration = ct.cntr_duration,
+																							registrationDate = ct.cntr_registrationDate
+																					}).OrderByDescending(ct => ct.registrationDate)
+																					.ToList()
+																					.Take(100);
+												
+										}else if (client_id > 0){
+
+												lsContracts = db.Contract.Where(ct => ct.cntr_state == true && ct.cli_id == client_id)
+																					.Select(ct => new ContractViewModel
+																					{
+																							id = ct.cntr_id,
+																							consecutive = ct.cntr_consecutive,
+																							code = ct.cntr_code,
+																							name = ct.cntr_name,
+																							observation = ct.cntr_observation,
+																							dealer = new DealerViewModel
+																							{
+																									id = ct.deal_id,
+																									document = ct.Dealer.deal_document,
+																									name = ct.Dealer.deal_name
+																							},
+																							client = new ClientViewModel
+																							{
+																									id = ct.cli_id,
+																									document = ct.Client.cli_document,
+																									name = ct.Client.cli_name
+																							},
+																							contractState = new ContractStateViewModel
+																							{
+																									id = ct.cntrst_id,
+																									name = ct.ContractState.cntrst_name,
+																									description = ct.ContractState.cntrst_description
+																							},
+																							discountType = new DiscountTypeViewModel
+																							{
+																									id = ct.dst_id,
+																									name = ct.DiscountType.dst_name
+																							},
+																							discountValue = ct.cntr_discountValue,
+																							amountOfMaintenances = ct.cntr_amountOfMaintenances,
+																							amountVehicles = ct.cntr_amountVehicles,
+																							startingDate = ct.cntr_startingDate,
+																							endingDate = ct.cntr_endingDate,
+																							duration = ct.cntr_duration,
+																							registrationDate = ct.cntr_registrationDate
+																					}).OrderByDescending(ct => ct.registrationDate)
+																					.ToList()
+																					.Take(100);
+
+												
+										}
 
 										return Ok(lsContracts);
+
 								}
 
 						}
@@ -287,7 +383,7 @@ namespace API_FleetService.Controllers
 								case "INSERT":
 										var lastConsecutive = this.getLastConsecutive();
 										contract.cntr_consecutive = lastConsecutive;
-										contract.cntr_code = "PRBA" + lastConsecutive.ToString();
+										contract.cntr_code = "CNT_FEC_" + lastConsecutive.ToString();
 										contract.cntr_registrationDate = DateTime.Now;
 										break;
 								case "UPDATE":
@@ -304,7 +400,6 @@ namespace API_FleetService.Controllers
 						contract.cntrst_id = pContract.contractState.id;
 						contract.dst_id = pContract.discountType.id;
 						contract.cntr_discountValue = pContract.discountValue;
-						contract.cntr_amountOfMaintenances = (int)pContract.amountOfMaintenances;
 						contract.cntr_amountVehicles = (int)pContract.amountVehicles;
 						contract.cntr_startingDate = pContract.startingDate;
 						contract.cntr_endingDate = pContract.endingDate;
@@ -629,6 +724,65 @@ namespace API_FleetService.Controllers
 						catch (Exception ex)
 						{
 								return BadRequest(ex.Message);	
+						}
+				}
+
+
+				[HttpGet]
+				public IHttpActionResult GetContractsByClient(int client_id) {
+						try
+						{
+								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities()) {
+
+										var lsContracts = db.Contract.Where(ct => ct.cli_id == client_id && ct.cntr_state == true)
+																								.Select(ct => new ContractViewModel 
+																										{
+																											id = ct.cntr_id,
+																											consecutive = ct.cntr_consecutive,
+																											code = ct.cntr_code,
+																											name = ct.cntr_name,
+																											observation = ct.cntr_observation,
+																											dealer = new DealerViewModel
+																											{
+																													id = ct.deal_id,
+																													document = ct.Dealer.deal_document,
+																													name = ct.Dealer.deal_name
+																											},
+																											client = new ClientViewModel
+																											{
+																													id = ct.cli_id,
+																													document = ct.Client.cli_document,
+																													name = ct.Client.cli_name
+																											},
+																											contractState = new ContractStateViewModel
+																											{
+																													id = ct.cntrst_id,
+																													name = ct.ContractState.cntrst_name,
+																													description = ct.ContractState.cntrst_description
+																											},
+																											discountType = new DiscountTypeViewModel
+																											{
+																													id = ct.dst_id,
+																													name = ct.DiscountType.dst_name
+																											},
+																											discountValue = ct.cntr_discountValue,
+																											amountOfMaintenances = ct.cntr_amountOfMaintenances,
+																											amountVehicles = ct.cntr_amountVehicles,
+																											startingDate = ct.cntr_startingDate,
+																											endingDate = ct.cntr_endingDate,
+																											duration = ct.cntr_duration,
+																											registrationDate = ct.cntr_registrationDate
+																									}
+																								).OrderByDescending(ct => ct.registrationDate)
+																								.ToList();
+
+										return Ok(lsContracts);
+								}						
+								
+						}
+						catch (Exception ex)
+						{
+								return BadRequest(ex.Message);
 						}
 				}
 

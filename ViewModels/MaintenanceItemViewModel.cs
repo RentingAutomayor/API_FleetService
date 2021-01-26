@@ -20,6 +20,9 @@ namespace API_FleetService.ViewModels
 				public Nullable<float> referencePrice;
 				public Nullable<bool> state;
 				public Nullable<float> amount;
+				public Nullable<bool> handleTax;
+				public List<TaxViewModel> lsTaxes;
+				public DealerViewModel dealer;
 				public Nullable<DateTime> registrationDate;
 
 
@@ -50,7 +53,7 @@ namespace API_FleetService.ViewModels
 
 						ItemDB.mi_code = pItem.code.ToUpper();
 						ItemDB.mi_name = pItem.name.ToUpper();
-						ItemDB.mi_description = pItem.description.ToUpper();					
+						ItemDB.mi_description = (pItem.description != null) ? pItem.description.ToUpper() : "";
 						ItemDB.tmi_id = (int) pItem.type.id;				
 						ItemDB.pu_id = (int)pItem.presentationUnit.id;						
 						
@@ -60,6 +63,8 @@ namespace API_FleetService.ViewModels
 						}
 						ItemDB.mi_referencePrice = pItem.referencePrice;
 						ItemDB.mi_state = true;
+						ItemDB.mi_handleTax = (bool) pItem.handleTax;
+
 						ItemDB.mi_registrationDate = DateTime.Now;										
 						return ItemDB;
 				}

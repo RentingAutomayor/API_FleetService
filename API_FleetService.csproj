@@ -46,8 +46,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="DAO_FleetService, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
+    <Reference Include="DAO_FleetService">
       <HintPath>..\DAO_FleetService\bin\Debug\DAO_FleetService.dll</HintPath>
     </Reference>
     <Reference Include="EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
@@ -192,6 +191,7 @@
     <Compile Include="ViewModels\CityViewModel.cs" />
     <Compile Include="ViewModels\ClientViewModel.cs" />
     <Compile Include="ViewModels\ContactViewModel.cs" />
+    <Compile Include="ViewModels\ContractState.cs" />
     <Compile Include="ViewModels\ContractStateViewModel.cs" />
     <Compile Include="ViewModels\ContractViewModel.cs" />
     <Compile Include="ViewModels\DealerViewModel.cs" />
@@ -214,6 +214,7 @@
     <Compile Include="ViewModels\PricesByContractViewModel.cs" />
     <Compile Include="ViewModels\PricesByDealerViewModel.cs" />
     <Compile Include="ViewModels\ResponseApiViewModel.cs" />
+    <Compile Include="ViewModels\TaxViewModel.cs" />
     <Compile Include="ViewModels\TransactionDetailViewModel.cs" />
     <Compile Include="ViewModels\TransactionObservationViewModel.cs" />
     <Compile Include="ViewModels\TransactionStateViewModel.cs" />
@@ -222,6 +223,7 @@
     <Compile Include="ViewModels\UserAccessViewModel.cs" />
     <Compile Include="ViewModels\UserLoginViewModel.cs" />
     <Compile Include="ViewModels\VehicleModelViewModel.cs" />
+    <Compile Include="ViewModels\VehicleState.cs" />
     <Compile Include="ViewModels\VehicleStateViewModel.cs" />
     <Compile Include="ViewModels\VehicleTypeViewModel.cs" />
     <Compile Include="ViewModels\VehicleViewModel.cs" />

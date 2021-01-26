@@ -239,7 +239,7 @@ namespace API_FleetService.Controllers
 						}
 				}
 
-				public IHttpActionResult GetVehiclesByClientAndModel(int pClient_id, string sModels)
+				public IHttpActionResult GetVehiclesByClientAndModel(int pClient_id, string sModels, int contract_id = 0)
 				{
 						try
 						{
@@ -251,38 +251,48 @@ namespace API_FleetService.Controllers
 										{
 												lsModelsId.Add(int.Parse(item));
 										}
-										var lsVehicles = db.Vehicle.Where(vh => vh.veh_state == true
-																						&& vh.cli_id == pClient_id && lsModelsId.Any(item => item == vh.vm_id))
-																				.Select(vh => new VehicleViewModel
-																				{
-																						id = vh.veh_id,
-																						licensePlate = vh.veh_licensePlate,
-																						chasisCode = vh.veh_chasisCode,
-																						vehicleState = new VehicleStateViewModel { id = vh.vehicleState.vs_id, name = vh.vehicleState.vs_name },
-																						vehicleModel = new VehicleModelViewModel
-																						{
-																								id = vh.vm_id,
-																								shortName = vh.VehicleModel.vm_shortName,
-																								longName = vh.VehicleModel.vm_longName,
-																								type = new VehicleTypeViewModel
-																								{
-																										id = vh.VehicleModel.vt_id,
-																										name = vh.VehicleModel.VehicleType.vt_name
-																								},
-																								brand = new BrandViewModel
-																								{
-																										id = vh.VehicleModel.vb_id,
-																										name = vh.VehicleModel.VehicleBrand.vb_name
-																								}
-																						},
-																						year = vh.veh_year,
-																						mileage = vh.veh_mileage,
-																						state = vh.veh_state,
-																						registrationDate = vh.veh_registrationDate
 
-																				}).ToList();
+										var lsVehiclesDB = db.STRPRC_GET_VEHICLES_WITHOUT_CONTRACT(pClient_id, contract_id);
+										var lsVehicles = new List<VehicleViewModel>();
 
-										return Ok(lsVehicles);
+										foreach (var vehicleDb in lsVehiclesDB)
+										{
+												VehicleViewModel vehicle = new VehicleViewModel()
+												{
+														id = vehicleDb.veh_id,
+														licensePlate = vehicleDb.veh_licensePlate,
+														chasisCode = vehicleDb.veh_chasisCode,
+														vehicleState = new VehicleStateViewModel { id = vehicleDb.vs_id, name = vehicleDb.vs_name },
+														vehicleModel = new VehicleModelViewModel
+														{
+																id = vehicleDb.vm_id,
+																shortName = vehicleDb.vm_shortName,
+																type = new VehicleTypeViewModel
+																{
+																		id = vehicleDb.vt_id,
+																		name = vehicleDb.vt_name
+																},
+																brand = new BrandViewModel
+																{
+																		id = vehicleDb.vb_id,
+																		name = vehicleDb.vb_name
+																}
+														},
+														year = vehicleDb.veh_year,
+														mileage = vehicleDb.veh_mileage,
+														registrationDate = vehicleDb.veh_registrationDate
+												};
+
+												lsVehicles.Add(vehicle);
+
+										}
+
+										IEnumerable<VehicleViewModel> lsVehiclesFiltered = from vehicles in lsVehicles
+																																			 where lsModelsId.Any(id => id == vehicles.vehicleModel.id)
+																																			 select vehicles;
+
+
+										return Ok(lsVehiclesFiltered);
 								}
 						}
 						catch (Exception ex)
