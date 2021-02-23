@@ -1,12 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
-using System.Web.Http;
-using API_FleetService.ViewModels;
+﻿using API_FleetService.ViewModels;
 using DAO_FleetService;
+using System;
+using System.Collections.Generic;
+using System.Data.Entity;
+using System.Linq;
+using System.Web.Http;
+using System.Net;
+using System.Net.Mail;
+
 
 namespace API_FleetService.Controllers
 {
@@ -23,15 +24,17 @@ namespace API_FleetService.Controllers
 
                 using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
                 {
-                    var decodeData = decode(userAut.password);
-                    userAut.password = decodeData;
-                    user = db.Users.Where(usr => usr.usr_name.Equals(userAut.user) && usr.usr_password.Equals(userAut.password))
+                    var decodeData = decode(userAut.usr_pass);
+                    userAut.usr_pass = decodeData;
+                    user = db.Users.Where(usr => usr.usr_name.Equals(userAut.usr_user) && usr.usr_password.Equals(userAut.usr_pass))
                                         .Select(usr => new UserAccessViewModel
                                         {
                                             id_user = usr.usr_id,
                                             user = usr.usr_name,
+                                            profile = usr.cli_id != null ? "cli-" + usr.cli_id : usr.deal_id != null ? "deal-" + usr.deal_id : usr.cpn_id != null ? "cpn-" + usr.cpn_id : "0",
                                             id_group = usr.grp_id
                                         }).FirstOrDefault();
+
 
 
                     if (user == null)
@@ -59,6 +62,89 @@ namespace API_FleetService.Controllers
             {
                 return BadRequest(ex.Message);
             }
+        }
+
+        public IHttpActionResult recoverPass(UserLoginViewModel userAut)
+        {
+            try
+            {
+                using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+                {
+                    var oUserDB = db.Users.FirstOrDefault(usr => usr.usr_name == userAut.usr_user);
+
+                    if (oUserDB != null)
+                    {
+                        var send = sendMail(oUserDB);
+                        if (send)
+                        {
+                            return Ok("ok");
+                        }
+                        else
+                        {
+                            return Ok("errorMail");
+                        }
+                    }
+                    else
+                    {
+                        return Ok("noUser");
+                    }
+
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        public bool sendMail(Users user)
+        {
+            var answer = false;
+
+            // diseño del html
+            string body =
+                "<body>" +
+                "<label>Los datos proporcionados son de indole privado y esta prohibida su difucion.</label>" +
+                "<br>" +
+                "<br>" +
+                "<label>Usuario: " + user.usr_name + "</label>" +
+                "<br>" +
+                "<label>Contraseña: " + user.usr_password + "</label>" +
+                "<br>" +
+                "<label>No responder este email.</label>" +
+                "</body>";
+
+            MailMessage mail = new MailMessage();
+            mail.From = new MailAddress("recoverPass@flotiAppp.com", "Recover Pass");
+            mail.To.Add(new MailAddress(user.email));
+            mail.Subject = "Olvide mi contraseña";
+            mail.Body = body;
+            mail.IsBodyHtml = true;
+            //mail.Priority = MailPriority.Normal;
+
+            SmtpClient smtp = new SmtpClient();
+            smtp.Host = "smtp.gmail.com";
+            // puertos en caso de que no funcione 465 - 587, a mi me funciono el 25
+            smtp.Port = 25; 
+            // email y contraseña desde donde se va a enviar el correo          
+            smtp.Credentials = new NetworkCredential("dubier1992@gmail.com", "********"); 
+            smtp.EnableSsl = true;           
+
+            try
+            {
+                smtp.Send(mail);
+                answer = true;
+            }
+            catch (Exception ex)
+            {
+                answer = false;
+            }
+            finally
+            {
+                smtp.Dispose();
+            }
+
+            return answer;
         }
 
         public static string decode(string pass)
@@ -157,13 +243,31 @@ namespace API_FleetService.Controllers
             {
                 using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
                 {
-                    //var lsUser = db.Users.Where(cl => cl.cli_state == true)
-                    var lsUser = db.Users.Select(usr => new UserAccessViewModel
-                    {
-                        id_user = usr.usr_id,
-                        user = usr.usr_name,
-                        id_group = usr.grp_id
-                    }).ToList();
+                    var lsUser = db.Users.Include(u => u.Groups)//.ThenInclude(g => g.GroupModuleAction).
+                        .Include(c => c.Client)
+                        .Include(d => d.Dealer)
+                        .Include(e => e.Company).Select(usr => new
+                        {
+                            usr_id = usr.usr_id,
+                            usr_firstName = usr.usr_firstName,
+                            usr_lastName = usr.usr_lastName,
+                            usr_name = usr.usr_name,
+                            usr_password = usr.usr_password,
+                            profile = usr.cli_id != null ? "cli-" + usr.cli_id : usr.deal_id != null ? "deal-" + usr.deal_id : usr.cpn_id != null ? "cpn-" + usr.cpn_id : "Admin",
+                            group = new
+                            {
+                                grp_id = usr.grp_id,
+                                grp_name = usr.Groups.grp_name
+                            }
+                        }).ToList();
+
+
+                    //var lsUser = db.Users.Select(usr => new UserAccessViewModel
+                    //{
+                    //    id_user = usr.usr_id,
+                    //    user = usr.usr_name,
+                    //    id_group = usr.grp_id
+                    //}).ToList();
 
                     return Ok(lsUser);
                 }
@@ -180,28 +284,32 @@ namespace API_FleetService.Controllers
         {
             try
             {
-                var oUserDB = new UserAccessViewModel();
-                var access = new List<GroupModuleAction>();
-
                 using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
                 {
-                    oUserDB = db.Users.Where(us => us.usr_id == pId)
-                            .Select(usr => new UserAccessViewModel
+                    var oUserDB = db.Users.Where(usr => usr.usr_id == pId)
+                        .Include(u => u.Groups)//.ThenInclude(g => g.GroupModuleAction).
+                        .Include(c => c.Client)
+                        .Include(d => d.Dealer)
+                        .Include(e => e.Company).Select(usr => new
+                        {
+                            usr_id = usr.usr_id,
+                            usr_names = usr.usr_firstName,
+                            usr_last_names = usr.usr_lastName,
+                            usr_user = usr.usr_name,
+                            usr_pass = usr.usr_password,
+                            usr_email = usr.email,
+                            profile = usr.cli_id != null ? "Cliente-" + usr.cli_id : usr.deal_id != null ? "Dealer-" + usr.deal_id : usr.cpn_id != null ? "Compañia-" + usr.cpn_id : "Admin",
+                            groupLoad = new
                             {
-                                id_user = usr.usr_id,
-                                user = usr.usr_name,
-                                id_group = usr.grp_id
-                            }).FirstOrDefault();
+                                id_group = usr.grp_id,
+                                groupName = usr.Groups.grp_name
+                            }
+                        }).FirstOrDefault();
 
-                    access = db.GroupModuleAction.Where(gma => gma.grp_id.Equals(oUserDB.id_group)).ToList();
-
+                    return Ok(oUserDB);
                 }
 
-                oUserDB = buildGroup(oUserDB);
 
-                oUserDB = buildModulesActions(oUserDB, access);
-
-                return Ok(oUserDB);
 
             }
             catch (Exception ex)
@@ -223,13 +331,13 @@ namespace API_FleetService.Controllers
                 if (UserWasInserted)
                 {
                     rta.response = true;
-                    rta.message = "El usuario " + pUser.user + " fue insertado correctamente en la base de datos.";
+                    rta.message = "El usuario " + pUser.usr_user + " fue insertado correctamente en la base de datos.";
                     return Ok(rta);
                 }
                 else
                 {
                     rta.response = false;
-                    rta.message = "Ha ocurrido un error intentado insertar el usuario:  " + pUser.user;
+                    rta.message = "Ha ocurrido un error intentado insertar el usuario:  " + pUser.usr_user;
                     return BadRequest(rta.message);
                 }
 
@@ -249,16 +357,16 @@ namespace API_FleetService.Controllers
                 using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
                 {
 
-                    var oUserDB = db.Users.Where(us => us.usr_id == pUser.idUser || us.usr_name == pUser.user)
+                    var oUserDB = db.Users.Where(us => us.usr_id == pUser.usr_id || us.usr_name == pUser.usr_user)
                                                                     .FirstOrDefault();
                     if (oUserDB != null)
                     {
-                        if (pUser.user.Trim() == "")
+                        if (pUser.usr_user.Trim() == "")
                         {
                             throw new Exception("El name del usuario no es válido");
                         }
 
-                        if (pUser.password.Trim() == "")
+                        if (pUser.usr_pass.Trim() == "")
                         {
                             throw new Exception("El password del usuario no es válido");
                         }
@@ -268,19 +376,49 @@ namespace API_FleetService.Controllers
                             throw new Exception("El usuario debe pertenecer a un grupo");
                         }
 
-                        oUserDB.usr_name = pUser.user;
-                        oUserDB.usr_password = pUser.password;
+                        oUserDB.usr_firstName = pUser.usr_names;
+                        oUserDB.usr_lastName = pUser.usr_last_names;
+                        oUserDB.email = pUser.usr_email;
+                        oUserDB.usr_name = pUser.usr_user;
+                        oUserDB.usr_password = pUser.usr_pass;
                         oUserDB.grp_id = pUser.group;
+
+                        if (pUser.cli_id == 0)
+                        {
+                            oUserDB.cli_id = null;
+                        }
+                        else
+                        {
+                            oUserDB.cli_id = pUser.cli_id;
+                        }
+
+                        if (pUser.cpn_id == 0)
+                        {
+                            oUserDB.cpn_id = null;
+                        }
+                        else
+                        {
+                            oUserDB.cpn_id = pUser.cpn_id;
+                        }
+
+                        if (pUser.deal_id == 0)
+                        {
+                            oUserDB.deal_id = null;
+                        }
+                        else
+                        {
+                            oUserDB.deal_id = pUser.deal_id;
+                        }
 
                         db.SaveChanges();
                         rta.response = true;
-                        rta.message = "Se ha actualizado el usuario: " + pUser.user;
+                        rta.message = "Se ha actualizado el usuario: " + pUser.usr_user;
                         return Ok(rta);
                     }
                     else
                     {
                         rta.response = false;
-                        rta.message = "No se encontró el usuario: " + pUser.user + " en la base de datos, por favor rectifique los datos";
+                        rta.message = "No se encontró el usuario: " + pUser.usr_user + " en la base de datos, por favor rectifique los datos";
                         return BadRequest(rta.message);
                     }
 
@@ -294,7 +432,7 @@ namespace API_FleetService.Controllers
         }
 
         [HttpPost]
-        public IHttpActionResult Delete(UserLoginViewModel pUser)
+        public IHttpActionResult Delete(Users pUser)
         {
             //TODO: Agregar usuario que hizo la acción
             try
@@ -302,7 +440,7 @@ namespace API_FleetService.Controllers
                 ResponseApiViewModel rta = new ResponseApiViewModel();
                 using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
                 {
-                    var oUserDB = db.Users.Where(us => us.usr_id == pUser.idUser).FirstOrDefault();
+                    var oUserDB = db.Users.Where(us => us.usr_id == pUser.usr_id).FirstOrDefault();
                     if (oUserDB != null)
                     {
                         //oUserDB.cli_document = "";

@@ -1,4 +1,3 @@
-D:\CASALLAS\API\API_FleetService\obj\Debug\API_FleetService.csproj.CoreCompileInputs.cache
 D:\CASALLAS\API\API_FleetService\bin\API_FleetService.dll.config
 D:\CASALLAS\API\API_FleetService\bin\API_FleetService.dll
 D:\CASALLAS\API\API_FleetService\bin\API_FleetService.pdb
@@ -59,7 +58,9 @@ D:\CASALLAS\API\API_FleetService\bin\Microsoft.CodeDom.Providers.DotNetCompilerP
 D:\CASALLAS\API\API_FleetService\bin\Microsoft.Web.Infrastructure.dll
 D:\CASALLAS\API\API_FleetService\bin\Newtonsoft.Json.dll
 D:\CASALLAS\API\API_FleetService\bin\System.Net.Http.Formatting.dll
+D:\CASALLAS\API\API_FleetService\bin\System.Web.Cors.dll
 D:\CASALLAS\API\API_FleetService\bin\System.Web.Helpers.dll
+D:\CASALLAS\API\API_FleetService\bin\System.Web.Http.Cors.dll
 D:\CASALLAS\API\API_FleetService\bin\System.Web.Http.dll
 D:\CASALLAS\API\API_FleetService\bin\System.Web.Http.WebHost.dll
 D:\CASALLAS\API\API_FleetService\bin\System.Web.Mvc.dll
@@ -73,6 +74,7 @@ D:\CASALLAS\API\API_FleetService\bin\DAO_FleetService.pdb
 D:\CASALLAS\API\API_FleetService\bin\DAO_FleetService.dll.config
 D:\CASALLAS\API\API_FleetService\bin\EntityFramework.xml
 D:\CASALLAS\API\API_FleetService\bin\EntityFramework.SqlServer.xml
+D:\CASALLAS\API\API_FleetService\bin\System.Web.Http.Cors.xml
 D:\CASALLAS\API\API_FleetService\bin\Newtonsoft.Json.xml
 D:\CASALLAS\API\API_FleetService\bin\System.Net.Http.Formatting.xml
 D:\CASALLAS\API\API_FleetService\bin\System.Web.Helpers.xml
@@ -96,10 +98,8 @@ D:\CASALLAS\API\API_FleetService\bin\es\System.Web.Razor.resources.dll
 D:\CASALLAS\API\API_FleetService\bin\es\System.Web.WebPages.resources.dll
 D:\CASALLAS\API\API_FleetService\bin\es\System.Web.WebPages.Deployment.resources.dll
 D:\CASALLAS\API\API_FleetService\bin\es\System.Web.WebPages.Razor.resources.dll
+D:\CASALLAS\API\API_FleetService\obj\Debug\API_FleetService.csprojAssemblyReference.cache
+D:\CASALLAS\API\API_FleetService\obj\Debug\API_FleetService.csproj.CoreCompileInputs.cache
 D:\CASALLAS\API\API_FleetService\obj\Debug\API_FleetService.csproj.CopyComplete
 D:\CASALLAS\API\API_FleetService\obj\Debug\API_FleetService.dll
 D:\CASALLAS\API\API_FleetService\obj\Debug\API_FleetService.pdb
-D:\CASALLAS\API\API_FleetService\obj\Debug\API_FleetService.csprojAssemblyReference.cache
-D:\CASALLAS\API\API_FleetService\bin\System.Web.Cors.dll
-D:\CASALLAS\API\API_FleetService\bin\System.Web.Http.Cors.dll
-D:\CASALLAS\API\API_FleetService\bin\System.Web.Http.Cors.xml

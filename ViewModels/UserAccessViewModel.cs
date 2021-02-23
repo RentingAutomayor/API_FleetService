@@ -11,6 +11,8 @@ namespace API_FleetService.ViewModels
 
         public string user { get; set; }
 
+        public string profile { get; set; }
+
         public virtual int id_group { get; set; }
 
         public Group group { get; set; }
@@ -21,6 +23,8 @@ namespace API_FleetService.ViewModels
         public int id_group  { get; set; }
 
         public string groupName { get; set; }
+
+        public string description { get; set; }
 
         public List<Module> modules { get; set; }
     }
