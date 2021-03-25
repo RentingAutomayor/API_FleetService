@@ -7,7 +7,7 @@ namespace API_FleetService.ViewModels
 {
     public class UserAccessViewModel
     {
-        public int id_user { get; set; }
+        public Nullable<int> id_user { get; set; }
         public string name { get; set; }
 
         public string lastName { get; set; }

@@ -25,6 +25,7 @@ namespace API_FleetService.ViewModels
 				public Nullable<bool> state;
 				public List<VehicleModelViewModel> lsVehicleModels;
 				public List<VehicleViewModel> lsVehicles;
+				public List<MaintenanceItemViewModel> lsMaintenanceItems;
 				public Nullable<DateTime> registrationDate;
 		}
 }

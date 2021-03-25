@@ -11,6 +11,7 @@ namespace API_FleetService.Controllers
 {
 		public class ContractController : ApiController
 		{
+				MaintenanceItemController MaintenanceItemController = new MaintenanceItemController();
 				[HttpGet]
 				public IHttpActionResult GetContractStates()
 				{
@@ -284,6 +285,7 @@ namespace API_FleetService.Controllers
 				{
 						try
 						{
+						
 								var transactionType = "INSERT";
 								var rta = new ResponseApiViewModel();
 								Contract oContractDB = new Contract();
@@ -297,8 +299,17 @@ namespace API_FleetService.Controllers
 										this.setVehicleModelsToContract(contract_id, pContract.lsVehicleModels);
 										this.setVehicleToContract(contract_id, pContract.lsVehicles);
 
-										rta.response = true;
-										rta.message = "Se ha insertado de manera correcta el contrato " + oContractDB.cntr_code;
+										PricesByContractViewModel pricesByContract = new PricesByContractViewModel();
+										pContract.id = contract_id;
+										pricesByContract.contract = pContract;
+										pricesByContract.lsMaintenanceItems = pContract.lsMaintenanceItems;
+
+										var response = this.MaintenanceItemController.SetPricesByContract(pricesByContract);
+										if (response.response) {
+												rta.response = true;
+												rta.message = "Se ha insertado de manera correcta el contrato " + oContractDB.cntr_code;
+										}
+										
 										return Ok(rta);
 								}
 
@@ -331,8 +342,20 @@ namespace API_FleetService.Controllers
 										this.setVehicleModelsToContract(contract_id, pContract.lsVehicleModels);
 										this.setVehicleToContract(contract_id, pContract.lsVehicles);
 
-										rta.response = true;
-										rta.message = "Se ha actualizado el contrato " + oContractDB.cntr_code;
+
+										PricesByContractViewModel pricesByContract = new PricesByContractViewModel();
+										pContract.id = contract_id;
+										pricesByContract.contract = pContract;
+										pricesByContract.lsMaintenanceItems = pContract.lsMaintenanceItems;
+
+										var response = this.MaintenanceItemController.SetPricesByContract(pricesByContract);
+										if (response.response)
+										{
+												rta.response = true;
+												rta.message = "Se ha actualizado el contrato " + oContractDB.cntr_code;
+										}
+
+									
 										return Ok(rta);
 								}
 
@@ -716,7 +739,8 @@ namespace API_FleetService.Controllers
 																			endingDate = ct.cntr_endingDate,
 																			duration = ct.cntr_duration,
 																			registrationDate = ct.cntr_registrationDate
-																	}).FirstOrDefault();
+																	}).OrderByDescending(ctr => ctr.registrationDate)
+																	.FirstOrDefault();
 
 										return Ok(contract);
 								}

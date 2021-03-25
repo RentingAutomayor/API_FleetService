@@ -1,4 +1,3 @@
-D:\RepositoriosRenting\API_FleetService\obj\Debug\API_FleetService.csproj.CoreCompileInputs.cache
 D:\RepositoriosRenting\API_FleetService\bin\API_FleetService.dll.config
 D:\RepositoriosRenting\API_FleetService\bin\API_FleetService.dll
 D:\RepositoriosRenting\API_FleetService\bin\API_FleetService.pdb
@@ -97,6 +96,7 @@ D:\RepositoriosRenting\API_FleetService\bin\es\System.Web.WebPages.resources.dll
 D:\RepositoriosRenting\API_FleetService\bin\es\System.Web.WebPages.Deployment.resources.dll
 D:\RepositoriosRenting\API_FleetService\bin\es\System.Web.WebPages.Razor.resources.dll
 D:\RepositoriosRenting\API_FleetService\obj\Debug\API_FleetService.csprojAssemblyReference.cache
+D:\RepositoriosRenting\API_FleetService\obj\Debug\API_FleetService.csproj.CoreCompileInputs.cache
 D:\RepositoriosRenting\API_FleetService\obj\Debug\API_FleetService.csproj.CopyComplete
 D:\RepositoriosRenting\API_FleetService\obj\Debug\API_FleetService.dll
 D:\RepositoriosRenting\API_FleetService\obj\Debug\API_FleetService.pdb

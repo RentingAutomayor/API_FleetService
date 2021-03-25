@@ -9,6 +9,7 @@ namespace API_FleetService.ViewModels
 		{
 				APROBADA = 1,
 				RECHAZADA = 2,
-				ANULADA = 3
+				ANULADA = 3,
+				FINALIZADA = 4
 		}
 }

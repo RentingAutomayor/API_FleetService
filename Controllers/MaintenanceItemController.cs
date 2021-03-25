@@ -448,6 +448,13 @@ namespace API_FleetService.Controllers
 								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
 								{
 										ResponseApiViewModel rta = new ResponseApiViewModel();
+
+										var itemExists = db.MaintenanceItem.Where(mi => mi.mi_code == pItem.code ).FirstOrDefault();
+
+										if (itemExists != null) {
+												throw new Exception("No se puede guardar el item de mantenimiento puesto que el código: " + pItem.code + " Ya se encuentra almacenado en la base de datos");
+										}
+
 										var oMaintenanceItem = MaintenanceItemViewModel.setDataToItem(pItem);
 										var ItemWasSaved = MaintenanceItemViewModel.InsertIntoDB(oMaintenanceItem);
 										if (ItemWasSaved)
@@ -839,10 +846,33 @@ namespace API_FleetService.Controllers
 																																				name = pbc.MaintenanceItem.MaintenanceItemCategory.mict_name
 																																		} : null,
 																																		referencePrice = pbc.mi_referencePrice,
-																																		state = pbc.MaintenanceItem.mi_state
+																																		state = pbc.MaintenanceItem.mi_state,
+																																		handleTax = pbc.MaintenanceItem.mi_handleTax
 
 																																}
 																														).ToList();
+
+										foreach (var maintenanceItem in priceByContract.lsMaintenanceItems)
+										{
+												if (maintenanceItem.handleTax == true)
+												{
+														var lsTaxes = db.TaxesByMaintenanceItem.Where(tx => tx.mi_id == maintenanceItem.id)
+																																	.Select(tx => new TaxViewModel
+																																	{
+																																			id = tx.tax_id,
+																																			name = tx.Taxes.tax_name,
+																																			description = tx.Taxes.tax_desccription,
+																																			percentValue = tx.Taxes.tax_percentValue,
+																																			registrationDate = tx.Taxes.tax_registrationDate
+																																	}).ToList();
+
+														if (lsTaxes != null)
+														{
+																maintenanceItem.lsTaxes = lsTaxes;
+														}
+												}
+
+										}
 
 										return Ok(priceByContract);
 								}
@@ -853,10 +883,7 @@ namespace API_FleetService.Controllers
 						}
 				}
 
-
-				[HttpPost]
-
-				public IHttpActionResult SetPricesByContract(PricesByContractViewModel pricesByContract)
+				public ResponseApiViewModel SetPricesByContract(PricesByContractViewModel pricesByContract)
 				{
 						try
 						{
@@ -866,6 +893,10 @@ namespace API_FleetService.Controllers
 										string transactionType = "";
 										int contract_id = (int)pricesByContract.contract.id;
 										var lsOldPrices = db.PricesByContract.Where(pbc => pbc.cntr_id == pricesByContract.contract.id).ToList();
+
+										IEnumerable<MaintenanceItemViewModel> lsNewItems = from lsItems in pricesByContract.lsMaintenanceItems
+																																			 where !lsOldPrices.Any(itm => itm.mi_id == lsItems.id)
+																																			 select lsItems;
 
 										if (lsOldPrices.Count > 0)
 										{
@@ -878,7 +909,14 @@ namespace API_FleetService.Controllers
 																this.setDataPricesByContract(contract_id, (int)oldPrice.mi_id, (float)newPrice.referencePrice, transactionType,ref priceByContract);
 																db.SaveChanges();
 														}
-														
+
+														foreach (var item in lsNewItems)
+														{
+																PricesByContract priceByContract = new PricesByContract();
+																this.setDataPricesByContract((int)pricesByContract.contract.id, (int)item.id, (float)item.referencePrice, "INSERT", ref priceByContract);
+																db.PricesByContract.Add(priceByContract);
+																db.SaveChanges();
+														}
 												}
 												
 										}
@@ -895,12 +933,12 @@ namespace API_FleetService.Controllers
 
 										rta.response = true;
 										rta.message = "Se han asignado los precios del contrato: " + pricesByContract.contract.code;
-										return Ok(rta);
+										return rta;
 								}
 						}
 						catch (Exception ex)
 						{
-								return BadRequest(ex.Message);
+								return null;
 						}
 				}
 

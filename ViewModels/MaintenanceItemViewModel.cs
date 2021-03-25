@@ -16,8 +16,12 @@ namespace API_FleetService.ViewModels
 				public PresentationUnitViewModel presentationUnit;
 				public List<VehicleTypeViewModel> lsVehicleType;
 				public List<VehicleModelViewModel> lsVehicleModel;
-				public CategoryViewModel category;
+				public CategoryViewModel category;				
 				public Nullable<float> referencePrice;
+				public Nullable<float> valueWithoutDiscount;
+				public Nullable<float> discountValue;
+				public Nullable<float> valueWithDiscountWithoutTaxes;
+				public Nullable<float> taxesValue;
 				public Nullable<bool> state;
 				public Nullable<float> amount;
 				public Nullable<bool> handleTax;

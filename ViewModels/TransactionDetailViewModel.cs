@@ -17,9 +17,9 @@ namespace API_FleetService.ViewModels
 				public ContractViewModel contract;
 				//TODO: Change this for model of users
 				//Maybe this can change because this informations is for transaction
-				public int userApprobation;
-				public int userReject;
-				public int userAnulation;
+				public Nullable<int> userApprobation;
+				public Nullable<int> userReject;
+				public Nullable<int> userAnulation;
 				public Nullable<DateTime> approbationDate;
 				public Nullable<DateTime> rejectDate;
 				public Nullable<DateTime> anulationDate;

@@ -69,6 +69,7 @@ namespace API_FleetService.Controllers
 												clientTmp.name = client.cli_name;
 												clientTmp.phone = client.cli_phone;
 												clientTmp.cellphone = client.cli_cellphone;
+												clientTmp.address = client.cli_adress;
 												clientTmp.website = client.cli_website;
 												clientTmp.city = (client.cty_id != null) ? new CityViewModel { id = client.cty_id } : null;
 												lsClient.Add(clientTmp);
@@ -90,8 +91,10 @@ namespace API_FleetService.Controllers
 								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities()) {
 										var financialInformation = db.FinancialInformationByClient.Where(fi => fi.ficl_state == true && fi.cli_id == pClient_id).FirstOrDefault();
 										var rta = new ResponseApiViewModel();
+										decimal consumedQuotaRounded = Convert.ToDecimal(string.Format("{0:F2}", financialInformation.ficl_consumedQuota));
+										decimal paymentRounded = Convert.ToDecimal(string.Format("{0:F2}", paymentValue));
 
-										if (paymentValue > financialInformation.ficl_consumedQuota)
+										if (paymentRounded > consumedQuotaRounded)
 										{
 												rta.response = false;
 												rta.message = "El pago no puede superar el valor del cupo consumido";

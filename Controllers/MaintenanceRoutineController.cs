@@ -300,34 +300,81 @@ namespace API_FleetService.Controllers
 																														registrationDate = ibr.MaintenanceItem.mi_registrationDate
 																												}).ToList();
 
-												foreach (var maintenanceItem in oLsItems)
+												if (oLsItems.Count > 0)
 												{
-														if (maintenanceItem.handleTax == true)
+														foreach (var maintenanceItem in oLsItems)
 														{
-																var lsTaxes = db.TaxesByMaintenanceItem.Where(tx => tx.mi_id == maintenanceItem.id)
-																																			.Select(tx => new TaxViewModel
-																																			{
-																																					id = tx.tax_id,
-																																					name = tx.Taxes.tax_name,
-																																					description = tx.Taxes.tax_desccription,
-																																					percentValue = tx.Taxes.tax_percentValue,
-																																					registrationDate = tx.Taxes.tax_registrationDate
-																																			}).ToList();
-
-																if (lsTaxes != null)
+																if (maintenanceItem.handleTax == true)
 																{
-																		maintenanceItem.lsTaxes = lsTaxes;
+																		var lsTaxes = db.TaxesByMaintenanceItem.Where(tx => tx.mi_id == maintenanceItem.id)
+																																					.Select(tx => new TaxViewModel
+																																					{
+																																							id = tx.tax_id,
+																																							name = tx.Taxes.tax_name,
+																																							description = tx.Taxes.tax_desccription,
+																																							percentValue = tx.Taxes.tax_percentValue,
+																																							registrationDate = tx.Taxes.tax_registrationDate
+																																					}).ToList();
+
+																		if (lsTaxes != null)
+																		{
+																				maintenanceItem.lsTaxes = lsTaxes;
+																		}
 																}
+
 														}
 
-												}
+														oRoutine.lsItems = oLsItems;
 
-												oRoutine.lsItems = oLsItems;
+												}										
+
+												
 										}
 
+										var lsRoutinesFiltered = from routine in lsRoutines
+																						 where routine.lsItems != null
+																						 select routine;
 
 
-										return Ok(lsRoutines);
+										int correctiveMaintenance = 21;
+										var correctiveRoutine = db.maintenanceRoutine.Where( mr => mr.fq_id == correctiveMaintenance && mr.vm_id == model_id)
+																								.Select(mr => new MaintenanceRoutineViewModel
+																								{
+																										id = mr.mr_id,
+																										name = mr.mr_name,
+																										description = mr.mr_description,
+																										vehicleModel = new VehicleModelViewModel
+																										{
+																												id = mr.vm_id,
+																												shortName = mr.VehicleModel.vm_shortName,
+																												longName = mr.VehicleModel.vm_longName,
+																												brand = new BrandViewModel
+																												{
+																														id = mr.VehicleModel.vb_id,
+																														name = mr.VehicleModel.VehicleBrand.vb_name
+																												},
+																												type = new VehicleTypeViewModel
+																												{
+																														id = mr.VehicleModel.vt_id,
+																														name = mr.VehicleModel.VehicleType.vt_name
+																												}
+																										},
+																										frequency = new FrequencyViewModel
+																										{
+																												id = mr.fq_id,
+																												name = mr.frequency.fq_name
+																										},
+																										state = mr.mr_state,
+																										referencePrice = mr.mr_referencePrice,
+																										registrationDate = mr.mr_registrationDate
+																								}).FirstOrDefault();
+
+
+										correctiveRoutine.lsItems = new List<MaintenanceItemViewModel>();
+
+										var lsToReturn = lsRoutinesFiltered.ToList();
+										lsToReturn.Add(correctiveRoutine);
+										return Ok(lsToReturn);
 								}
 
 						}

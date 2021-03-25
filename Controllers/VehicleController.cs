@@ -405,7 +405,9 @@ namespace API_FleetService.Controllers
 						{
 								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
 								{
-										var lsVehicles = db.Vehicle.Where(vh => vh.veh_state == true && vh.veh_licensePlate.ToUpper().Contains(pLicensePlate.ToUpper()))
+										
+										var lsVehicles = db.Vehicle.Where(vh => vh.veh_state == true 
+																								&& vh.veh_licensePlate.ToUpper().Contains(pLicensePlate.ToUpper()))
 																								.Select(vh => new VehicleViewModel
 
 																								{

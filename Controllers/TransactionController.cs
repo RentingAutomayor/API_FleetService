@@ -18,7 +18,7 @@ namespace API_FleetService.Controllers
 						{
 								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
 								{
-										var rowsTransactionsDB = db.STRPRC_GET_TRANSACTIONS_TODAY();
+										var rowsTransactionsDB = db.STRPRC_GET_TRANSACTIONS_TODAY1();
 										List<TransactionViewModel> lsTransactions = new List<TransactionViewModel>();
 										foreach (var trxDB in rowsTransactionsDB)
 										{
@@ -42,14 +42,18 @@ namespace API_FleetService.Controllers
 												trxState.name = trxDB.trxst_name;
 
 												transaction.id = trxDB.trx_id;
+												transaction.code = trxDB.trx_code;
 												transaction.consecutive = trxDB.trx_consecutive;
 												transaction.client = clientTmp;
 												transaction.movement = movementTmp;
 												transaction.transactionState = trxState;
 												transaction.value = Double.Parse(trxDB.trx_value.ToString());
 												transaction.registrationDate = trxDB.trx_registrationDate;
-												//TODO:: change this for correct user
-												transaction.usu_id = 0;
+												
+												transaction.user = new UserAccessViewModel();
+												transaction.user.id_user = trxDB.usu_id;
+												transaction.user.name = trxDB.usu_name;
+												transaction.user.lastName = trxDB.usu_lastName;
 
 												lsTransactions.Add(transaction);
 
@@ -74,10 +78,20 @@ namespace API_FleetService.Controllers
 
 										var consecutive = 0;
 
-										consecutive = db.STRPRC_PROCESS_TRANSACTION(
+									  decimal valueWithoutDscount = Convert.ToDecimal(string.Format("{0:F2}", transaction.valueWithoutDiscount));
+										decimal discountValue = Convert.ToDecimal(string.Format("{0:F2}", transaction.discountValue));
+										decimal taxesValue = Convert.ToDecimal(string.Format("{0:F2}", transaction.taxesValue));
+										decimal valueWithDiscountWithoutTaxes = Convert.ToDecimal(string.Format("{0:F2}", transaction.valueWithDiscountWithoutTaxes));
+										decimal valueTRX = Convert.ToDecimal(string.Format("{0:F2}", transaction.value));
+
+										consecutive = db.STRPRC_PROCESS_TRANSACTION_V2(
 														transaction.client.id,
 														transaction.movement.id,
-														transaction.value,
+														valueWithoutDscount,
+														discountValue,
+														valueWithDiscountWithoutTaxes,
+														taxesValue,
+														valueTRX,
 														(transaction.transactionState != null) ? transaction.transactionState.id : null,
 														transaction.usu_id
 												);
@@ -134,6 +148,29 @@ namespace API_FleetService.Controllers
 																}
 
 
+																if (transaction.movement.id == (int)EnumMovement.FINALIZACION_ORDEN_DE_TRABAJO)
+																{
+																		var trxRelated = db.transactions.Where(tr => tr.trx_id == trxDetail.trx_relation_id).FirstOrDefault();
+																		trxRelated.trxst_id = (int)EnumTransactionState.FINALIZADA;
+																		var trxRelatedDetail = db.transactionDetail.Where(trx => trx.trx_id == trxDetail.trx_relation_id).FirstOrDefault();
+																		trxRelatedDetail.usu_ending = transaction.usu_id;
+																		trxRelatedDetail.trx_endingDate = DateTime.Now;
+																}
+
+
+																if (transaction.movement.id == (int)EnumMovement.ANULACION_ORDEN_DE_TRABAJO)
+																{
+																		var trxRelated = db.transactions.Where(tr => tr.trx_id == trxDetail.trx_relation_id).FirstOrDefault();
+																		trxRelated.trxst_id = (int)EnumTransactionState.ANULADA;
+																		var trxRelatedDetail = db.transactionDetail.Where(trx => trx.trx_id == trxDetail.trx_relation_id).FirstOrDefault();
+																		trxRelatedDetail.usu_anulation = transaction.usu_id;
+																		trxRelatedDetail.trx_anulationDate = DateTime.Now;
+																}
+
+
+
+
+
 																db.transactionDetail.Add(trxDetail);
 																db.SaveChanges();
 
@@ -146,12 +183,17 @@ namespace API_FleetService.Controllers
 																{
 																		foreach (var item in transaction.lsItems)
 																		{
+																				var taxValue = (item.taxesValue != null) ? item.taxesValue : 0;
 																				transactionItems oItemDB = new transactionItems();
 																				oItemDB.trx_id = trx_id;
 																				oItemDB.mi_id = item.id;
 																				oItemDB.mi_amount = item.amount;
 																				oItemDB.mi_referencePrice = item.referencePrice;
-																				oItemDB.mi_totalPrice = (item.referencePrice * item.amount);
+																				oItemDB.mi_valueWithoutDiscount = item.valueWithoutDiscount;
+																				oItemDB.mi_discountValue = item.discountValue;
+																				oItemDB.mi_valueWithDiscountWithoutTaxes = item.valueWithDiscountWithoutTaxes;
+																				oItemDB.mi_totalPrice = item.valueWithDiscountWithoutTaxes + taxValue;
+																				oItemDB.mi_taxesValue = taxValue;
 																				db.transactionItems.Add(oItemDB);
 																				db.SaveChanges();
 																		}
@@ -168,7 +210,7 @@ namespace API_FleetService.Controllers
 																				observationsByTransaction observationDb = new observationsByTransaction();
 																				observationDb.trx_id = trx_id;
 																				observationDb.obstrx_description = observation.description;
-																				observationDb.usu_id = transaction.usu_id;
+																				observationDb.usr_id = transaction.usu_id;
 																				observationDb.obstrx_registrationDate = DateTime.Now;
 																				db.observationsByTransaction.Add(observationDb);
 
@@ -197,7 +239,7 @@ namespace API_FleetService.Controllers
 						{
 								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
 								{
-										var lsTrxToApprove = db.STRPRC_GET_WORKORDERS_TO_APPROVE_BY_CLIENT(client_id);
+										var lsTrxToApprove = db.STRPRC_GET_WORKORDERS_TO_APPROVE_BY_CLIENT1(client_id);
 
 										var lsTransactions = new List<TransactionViewModel>();
 
@@ -206,6 +248,7 @@ namespace API_FleetService.Controllers
 												TransactionViewModel trxToApprove = new TransactionViewModel();
 												trxToApprove.id = trx.trx_id;
 												trxToApprove.consecutive = trx.trx_consecutive;
+												trxToApprove.code = trx.trx_code;
 												trxToApprove.value = (double)trx.trx_value;
 												trxToApprove.registrationDate = trx.trx_registrationDate;
 												trxToApprove.client = new ClientViewModel();
@@ -252,13 +295,24 @@ namespace API_FleetService.Controllers
 
 
 				[HttpGet]
-				public IHttpActionResult GetTransactionsByDealer(int dealer_id)
+				public IHttpActionResult GetTransactionsByDealerOrClient(int? dealer_id = null, int? client_id = null, DateTime? init_date = null, DateTime? end_date = null,	string code = null, string license_plate = null, int?state_trx = null )
 				{
 						try
 						{
 								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
 								{
-										var lsTransactionByDealer = db.STRPRC_GET_WORKORDERS_BY_DEALER1(dealer_id);
+										code = (code != "" && code != "null" && code != null) ? code : null;
+										license_plate = (license_plate != "" && license_plate != "null" && license_plate != null) ? license_plate : null;
+
+										var lsTransactionByDealer = db.STRPRC_GET_TRANSACTIONS_BY_CLIENT_OR_DEALER(
+														dealer_id,
+														client_id,
+														init_date,
+														end_date,
+														code,
+														license_plate,
+														state_trx);
+										
 										var lsTransactions = new List<TransactionViewModel>();
 
 										foreach (var trx in lsTransactionByDealer)
@@ -266,14 +320,15 @@ namespace API_FleetService.Controllers
 												var transaction = new TransactionViewModel();
 												transaction.id = trx.trx_id;
 												transaction.consecutive = trx.trx_consecutive;
-
+												transaction.code = trx.trx_code;
+												transaction.value = (double)trx.trx_value;
 												if (trx.trxst_id != null)
 												{
 														transaction.transactionState = new TransactionStateViewModel();
 														transaction.transactionState.id = trx.trxst_id;
 														transaction.transactionState.name = trx.trxst_name;
 												}
-
+												
 												transaction.registrationDate = trx.trx_registrationDate;
 
 												transaction.client = new ClientViewModel();
@@ -314,7 +369,7 @@ namespace API_FleetService.Controllers
 				}
 
 				[HttpGet]
-				public IHttpActionResult GettransactionsByClient(int client_id)
+				public IHttpActionResult GetTransactionsByClient(int client_id)
 				{
 						try
 						{
@@ -328,6 +383,7 @@ namespace API_FleetService.Controllers
 												TransactionViewModel logTrx = new TransactionViewModel();
 												logTrx.id = trx.trx_id;
 												logTrx.consecutive = trx.trx_consecutive;
+
 												logTrx.value = (double)trx.trx_value;
 												logTrx.registrationDate = trx.trx_registrationDate;
 
@@ -388,6 +444,251 @@ namespace API_FleetService.Controllers
 						}
 
 				}
+
+
+				[HttpGet]
+				public IHttpActionResult GetTransactionById(int trx_id) {
+						try
+						{
+								TransactionViewModel transaction = new TransactionViewModel();
+								transaction = this.getTransactionHeader(trx_id);
+								transaction.headerDetails = this.getTransactionDetails(trx_id);
+								transaction.lsItems = this.getTransactionItems(trx_id);
+								transaction.lsObservations = this.getTransactionObservations(trx_id);
+
+								return Ok(transaction);
+						}
+						catch (Exception ex)
+						{
+								return BadRequest(ex.Message);	
+						}
+				}
+
+
+				private TransactionViewModel getTransactionHeader(int trx_id) {
+						try
+						{
+								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+								{
+										var transactionHeader = db.transactions.Where(trx => trx.trx_id == trx_id)
+																								.Select(trx => new TransactionViewModel
+																								{
+																										id = trx.trx_id,
+																										consecutive = trx.trx_consecutive,
+																										code = trx.trx_code,
+																										valueWithoutDiscount = (double)trx.trx_valueWithoutDiscount,
+																										discountValue = (double)trx.trx_discountValue,
+																										valueWithDiscountWithoutTaxes = (double) trx.trx_valueWithDiscountWithoutTaxes,
+																										taxesValue = (double)trx.trx_taxesValue,
+																										value = (double)trx.trx_value,
+																										registrationDate = trx.trx_registrationDate,
+																										client = new ClientViewModel() { 
+																												id = trx.cli_id,
+																												document = trx.Client.cli_document,
+																												name = trx.Client.cli_name
+																										},
+																										transactionState = new TransactionStateViewModel()
+																										{
+																												id = trx.trxst_id,
+																												name = trx.transactionState.trxst_name
+																										},
+																										usu_id = (int)trx.usu_id,
+																										movement = new MovementViewModel() { 
+																												id = trx.m_id,
+																												name = trx.Movement.m_name
+																										}
+																								}).FirstOrDefault();
+										return transactionHeader;
+								}
+								
+						}
+						catch (Exception ex)
+						{
+								throw;
+						}
+						
+				}
+
+				private TransactionDetailViewModel getTransactionDetails(int trx_id) {
+						try
+						{
+								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+								{
+										var transactionDetail = db.transactionDetail.Where(trx => trx.trx_id == trx_id)
+																								.Select(trx => new TransactionDetailViewModel {
+																										vehicle = new VehicleViewModel() { 
+																												id = trx.veh_id,
+																												licensePlate = trx.Vehicle.veh_licensePlate,
+																												year = trx.Vehicle.veh_year,
+																												mileage = trx.Vehicle.veh_mileage,
+																												vehicleModel = new VehicleModelViewModel() { 
+																														id = trx.Vehicle.vm_id,
+																														shortName = trx.Vehicle.VehicleModel.vm_shortName,
+																														type = new VehicleTypeViewModel() { 
+																																id = trx.Vehicle.VehicleModel.VehicleType.vt_id,
+																																name = trx.Vehicle.VehicleModel.VehicleType.vt_name
+																														},
+																														brand = new BrandViewModel() {
+																																id = trx.Vehicle.VehicleModel.vb_id,
+																																name = trx.Vehicle.VehicleModel.VehicleBrand.vb_name
+																														}
+																														
+																												}
+																										},
+																										dealer = new DealerViewModel() { 
+																												id = trx.deal_id,
+																												name = trx.Dealer.deal_name
+																										},
+																										branch = new BranchViewModel() { 
+																												id = trx.bra_id,
+																												name = trx.branch.bra_name
+																										},
+																										maintenanceRoutine = new MaintenanceRoutineViewModel() { 
+																												id = trx.mr_id,
+																												name = trx.maintenanceRoutine.mr_name
+																										},
+																										contract = new ContractViewModel() { 
+																												id = trx.cntr_id,
+																												code = trx.Contract.cntr_code
+																										},
+																										userApprobation = (int)trx.usu_approbation,
+																										userReject = (int)trx.usu_reject,
+																										userAnulation = (int)trx.usu_anulation,
+																										approbationDate = trx.trx_approbationDate,
+																										rejectDate = trx.trx_rejectDate,
+																										anulationDate = trx.trx_anulationDate,
+																										relatedTransaction = new TransactionViewModel() { 
+																												id = trx.trx_relation_id
+																										}
+																								})
+																								.FirstOrDefault();
+										return transactionDetail;
+								}
+								
+						}
+						catch (Exception)
+						{
+								throw;
+						}
+					
+				}
+
+				private List<MaintenanceItemViewModel> getTransactionItems(int trx_id)
+				{
+						using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+						{
+								var lsMaintenanceItems = db.transactionItems.Where(trx => trx.trx_id == trx_id)
+																								.Select(mi => new MaintenanceItemViewModel
+																								{
+																										id = mi.mi_id,
+																										code = mi.MaintenanceItem.mi_code,
+																										name = mi.MaintenanceItem.mi_name,
+																										type = new TypeOfMaintenanceItemViewModel() { 
+																												id = mi.MaintenanceItem.tmi_id,
+																												name = mi.MaintenanceItem.TypeOfMaintenanceItem.tmi_name
+																										},
+																										presentationUnit = new PresentationUnitViewModel() { 
+																												id = mi.MaintenanceItem.pu_id,
+																												longName = mi.MaintenanceItem.PresentationUnit.pu_longName,
+																												shortName = mi.MaintenanceItem.PresentationUnit.pu_shortName
+																										},
+																										category = new CategoryViewModel() { 
+																												id = mi.MaintenanceItem.mict_id,
+																												name = mi.MaintenanceItem.MaintenanceItemCategory.mict_name
+																										},
+																										referencePrice = mi.mi_referencePrice,
+																										valueWithoutDiscount = (float) mi.mi_valueWithoutDiscount,
+																										discountValue = (float) mi.mi_discountValue,
+																										valueWithDiscountWithoutTaxes = (float) mi.mi_valueWithDiscountWithoutTaxes,
+																										taxesValue = (float)mi.mi_taxesValue,
+																										amount = (float)mi.mi_amount,
+																										handleTax = mi.MaintenanceItem.mi_handleTax																								
+
+																								}).ToList();
+
+								foreach (var maintenanceItem in lsMaintenanceItems)
+								{
+										if (maintenanceItem.handleTax == true)
+										{
+												var lsTaxes = db.TaxesByMaintenanceItem.Where(tx => tx.mi_id == maintenanceItem.id)
+																															.Select(tx => new TaxViewModel
+																															{
+																																	id = tx.tax_id,
+																																	name = tx.Taxes.tax_name,
+																																	description = tx.Taxes.tax_desccription,
+																																	percentValue = tx.Taxes.tax_percentValue,
+																																	registrationDate = tx.Taxes.tax_registrationDate
+																															}).ToList();
+
+												if (lsTaxes != null)
+												{
+														maintenanceItem.lsTaxes = lsTaxes;
+												}
+										}
+								}
+
+								return lsMaintenanceItems;
+						}
+						
+				}
+
+
+				private List<TransactionObservationViewModel> getTransactionObservations(int trx_id)
+				{
+						using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+						{
+								var lsTrxRelated = db.transactionDetail
+																		.Where(trx => trx.trx_relation_id == trx_id)
+																		.Select(trx => trx.trx_id).ToList();
+
+								lsTrxRelated.Add(trx_id);
+
+								var lsObservations = db.observationsByTransaction.Where(trx => lsTrxRelated.Any(tr => tr == trx.trx_id))
+																										.Select(trx => new TransactionObservationViewModel
+																										{
+																												id = trx.obstrx_id,
+																												description = trx.obstrx_description,
+																												registrationDate = trx.obstrx_registrationDate,
+																												user = new UserAccessViewModel() { 
+																														id_user = trx.usr_id,
+																														name = trx.Users.usr_firstName,
+																														lastName = trx.Users.usr_lastName
+																												}
+																										}).OrderBy(trx => trx.registrationDate)
+																										.ToList();
+								return lsObservations;
+						}
+						
+				}
+
+
+				[HttpGet]
+				public IHttpActionResult getTransactionStates() {
+						try
+						{
+								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities()) {
+										var lsStates = db.transactionState.Where(st => st.trxst_state == true)
+																				.Select(st => new TransactionStateViewModel
+																				{
+																						id = st.trxst_id,
+																						name = st.trxst_name,
+																						description = st.trxst_description
+																				}).ToList();
+
+										
+										var pendingState = new TransactionStateViewModel() { id = 0, name = "PENDIENTE" };
+										
+										lsStates.Add(pendingState);
+
+										return Ok(lsStates);
+								}
+						}
+						catch (Exception ex)
+						{
+								return BadRequest(ex.Message);
+						}
+				}
+
 
 
 
