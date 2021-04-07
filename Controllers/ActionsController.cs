@@ -20,7 +20,7 @@ namespace API_FleetService.Controllers
             {
                 using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
                 {                    
-                    var lsActions = db.Actions.Select(ac => new ActionViewModel
+                    var lsActions = db.Actions.Where(ac => ac.activo == true).Select(ac => new ActionViewModel
                     { 
                         act_id = ac.act_id,
                         act_name = ac.act_name,
@@ -48,9 +48,10 @@ namespace API_FleetService.Controllers
                     var oAccionDB = db.Actions.Where(ac => ac.act_id == pAction.act_id).FirstOrDefault();
                     if (oAccionDB != null)
                     {
-                        var relaciones = db.GroupModuleAction.Where(gma => gma.act_id == oAccionDB.act_id).ToList();                        
-                        db.GroupModuleAction.RemoveRange(relaciones);
-                        db.Actions.Remove(oAccionDB);
+                        var relaciones = db.GroupModuleAction.Where(gma => gma.act_id == oAccionDB.act_id).ToList();
+                        //db.GroupModuleAction.RemoveRange(relaciones);
+                        //db.Actions.Remove(oAccionDB);
+                        oAccionDB.activo = false;
                         db.SaveChanges();
                         rta.response = true;
                         rta.message = "Se ha eliminado la accion: " + oAccionDB.act_name + " de la base de datos";

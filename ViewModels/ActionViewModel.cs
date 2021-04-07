@@ -43,6 +43,7 @@ namespace API_FleetService.ViewModels
             Actions actionToInsert = new Actions();
             actionToInsert.act_name = pAction.act_name;
             actionToInsert.act_description = pAction.act_description;
+            actionToInsert.activo = true;
 
             return actionToInsert;
         }
@@ -55,7 +56,7 @@ namespace API_FleetService.ViewModels
                 bool rta = false;
                 using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
                 {
-                    var actionDb = db.Actions.Where(ac => ac.act_name == pAction_name).FirstOrDefault();
+                    var actionDb = db.Actions.Where(ac => ac.act_name == pAction_name && ac.activo == true).FirstOrDefault();
                     if (actionDb != null)
                     {
                         rta = true;

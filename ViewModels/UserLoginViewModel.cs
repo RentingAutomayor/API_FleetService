@@ -37,6 +37,11 @@ namespace API_FleetService.ViewModels
                 throw new Exception("El usuario que intenta ingresar, ya se encuentra almacenado en la base de datos");
             }
 
+            if (pUser.usr_email == null || pUser.usr_email == "" || UserLoginViewModel.EmailExistInDB(pUser.usr_email.Trim()))
+            {
+                throw new Exception("El correo que intenta ingresar, ya se encuentra almacenado en la base de datos");
+            }
+
             Users userToInsert = UserLoginViewModel.SetDataToUsers(pUser);
 
             return userToInsert;
@@ -94,6 +99,7 @@ namespace API_FleetService.ViewModels
             usersToInsert.usr_password = pUser.usr_pass;
             usersToInsert.email = pUser.usr_email;
             usersToInsert.grp_id = pUser.group;
+            usersToInsert.activo = true;
 
 
 
@@ -122,7 +128,7 @@ namespace API_FleetService.ViewModels
                 bool rta = false;
                 using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
                 {
-                    var userDB = db.Users.Where(us => us.usr_name == pUser_name).FirstOrDefault();
+                    var userDB = db.Users.Where(us => us.usr_name == pUser_name && us.activo == true).FirstOrDefault();
                     if (userDB != null)
                     {
                         rta = true;
@@ -135,6 +141,28 @@ namespace API_FleetService.ViewModels
                 return false;
             }
         }
+
+        private static bool EmailExistInDB(string pEmail_name)
+        {
+            try
+            {
+                bool rta = false;
+                using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+                {
+                    var userDB = db.Users.Where(us => us.email == pEmail_name && us.activo == true).FirstOrDefault();
+                    if (userDB != null)
+                    {
+                        rta = true;
+                    }
+                    return rta;
+                }
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+        }
+
 
         public static bool InsertIntoDB(Users user)
         {

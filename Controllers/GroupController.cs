@@ -20,7 +20,7 @@ namespace API_FleetService.Controllers
 
                 using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
                 {
-                    lsGroup = db.Groups.Select(grp => new Group
+                    lsGroup = db.Groups.Where(gr => gr.activo == true).Select(grp => new Group
                     {
                         id_group = grp.grp_id,
                         groupName = grp.grp_name,
@@ -131,7 +131,7 @@ namespace API_FleetService.Controllers
 
                             foreach (var action in module)
                             {
-                                var actionItem = db.Actions.Where(act => act.act_id == action.act_id)
+                                var actionItem = db.Actions.Where(act => act.act_id == action.act_id && act.activo == true)
                                                     .Select(act => new ActionModule
                                                     {
                                                         id_action = act.act_id,
@@ -141,7 +141,12 @@ namespace API_FleetService.Controllers
                                 moduleItem.actions.Add(actionItem);
                             }
 
-                            group.modules.Add(moduleItem);
+                            if (moduleItem.actions.Count > 0)
+                            {
+                                group.modules.Add(moduleItem);
+                            }
+
+                            
                         }
                     }
                 }
@@ -364,17 +369,28 @@ namespace API_FleetService.Controllers
                 ResponseApiViewModel rta = new ResponseApiViewModel();
                 using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
                 {
+                    
                     var oGroupDB = db.Groups.Where(gr => gr.grp_id == pGroup.id_group).FirstOrDefault();
                     if (oGroupDB != null)
                     {
-                        //oUserDB.cli_document = "";
-                        //oUserDB.cli_state = false;
-                        //oUserDB.cli_deleteDate = DateTime.Now;
-                        db.Groups.Remove(oGroupDB);
-                        db.SaveChanges();
-                        rta.response = true;
-                        rta.message = "Se ha eliminado el grupo: " + oGroupDB.grp_name + " y sus dependencias de la base de datos";
-                        return Ok(rta);
+                        var UserByGroup = db.Users.Where(us => us.activo == true && us.grp_id == oGroupDB.grp_id).Count();
+
+                        if (UserByGroup == 0)
+                        {
+                            oGroupDB.activo = false;
+                            db.SaveChanges();
+                            rta.response = true;
+                            rta.message = "Se ha eliminado el grupo: " + oGroupDB.grp_name + " y sus dependencias de la base de datos";
+                            return Ok(rta);
+                        }
+                        else
+                        {
+                            rta.response = false;
+                            rta.message = $"El grupo esta siendo usado por {UserByGroup} usuario/s, validar antes de la eliminacion";
+                            return BadRequest(rta.message);
+                        }
+                       
+                        
                     }
                     else
                     {

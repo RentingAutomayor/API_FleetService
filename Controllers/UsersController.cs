@@ -26,7 +26,7 @@ namespace API_FleetService.Controllers
                 {
                     var decodeData = decode(userAut.usr_pass);
                     userAut.usr_pass = decodeData;
-                    user = db.Users.Where(usr => usr.usr_name.Equals(userAut.usr_user) && usr.usr_password.Equals(userAut.usr_pass))
+                    user = db.Users.Where(usr => usr.usr_name.Equals(userAut.usr_user) && usr.usr_password.Equals(userAut.usr_pass) && usr.activo == true)
                                         .Select(usr => new UserAccessViewModel
                                         {
                                             id_user = usr.usr_id,
@@ -109,9 +109,9 @@ namespace API_FleetService.Controllers
                 "<br>" +
                 "<label>Usuario: " + user.usr_name + "</label>" +
                 "<br>" +
-                "<label>Contraseña: " + user.usr_password + "</label>" +
+                "<label>Para hacer cambio de contraseña favor dar click en el siguiente link</label>" +
                 "<br>" +
-                "<label>No responder este email.</label>" +
+                "<label>http://localhost:4200/ChangePassword</label>" +
                 "</body>";
 
             MailMessage mail = new MailMessage();
@@ -127,7 +127,7 @@ namespace API_FleetService.Controllers
             // puertos en caso de que no funcione 465 - 587, a mi me funciono el 25
             smtp.Port = 25; 
             // email y contraseña desde donde se va a enviar el correo          
-            smtp.Credentials = new NetworkCredential("dubier1992@gmail.com", "********"); 
+            smtp.Credentials = new NetworkCredential("dubier1992@gmail.com", "esneiderd192"); 
             smtp.EnableSsl = true;           
 
             try
@@ -165,7 +165,7 @@ namespace API_FleetService.Controllers
                 using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
                 {
                     // group data 
-                    group = db.Groups.Where(grp => grp.grp_id == user.id_group)
+                    group = db.Groups.Where(grp => grp.grp_id == user.id_group && grp.activo == true)
                                         .Select(grp => new Group
                                         {
                                             id_group = grp.grp_id,
@@ -199,7 +199,7 @@ namespace API_FleetService.Controllers
 
                     foreach (var module in groupModuleById)
                     {
-                        var moduleItem = db.Modules.Where(mdl => mdl.mdl_id == module.Key)
+                        var moduleItem = db.Modules.Where(mdl => mdl.mdl_id == module.Key && mdl.mdl_state == true)
                                                .Select(mdl => new Module
                                                {
                                                    id_module = mdl.mdl_id,
@@ -213,7 +213,7 @@ namespace API_FleetService.Controllers
 
                         foreach (var action in module)
                         {
-                            var actionItem = db.Actions.Where(act => act.act_id == action.act_id)
+                            var actionItem = db.Actions.Where(act => act.act_id == action.act_id && act.activo == true)
                                                 .Select(act => new ActionModule
                                                 {
                                                     id_action = act.act_id,
@@ -246,7 +246,7 @@ namespace API_FleetService.Controllers
                     var lsUser = db.Users.Include(u => u.Groups)//.ThenInclude(g => g.GroupModuleAction).
                         .Include(c => c.Client)
                         .Include(d => d.Dealer)
-                        .Include(e => e.Company).Select(usr => new
+                        .Include(e => e.Company).Where(u => u.activo == true).Select(usr => new
                         {
                             usr_id = usr.usr_id,
                             usr_firstName = usr.usr_firstName,
@@ -297,6 +297,7 @@ namespace API_FleetService.Controllers
                             usr_last_names = usr.usr_lastName,
                             usr_user = usr.usr_name,
                             usr_pass = usr.usr_password,
+                            usr_pass_confirm = usr.usr_password,
                             usr_email = usr.email,
                             profile = usr.cli_id != null ? "Cliente-" + usr.cli_id : usr.deal_id != null ? "Dealer-" + usr.deal_id : usr.cpn_id != null ? "Compañia-" + usr.cpn_id : "Admin",
                             groupLoad = new
@@ -444,9 +445,9 @@ namespace API_FleetService.Controllers
                     if (oUserDB != null)
                     {
                         //oUserDB.cli_document = "";
-                        //oUserDB.cli_state = false;
+                        oUserDB.activo = false;
                         //oUserDB.cli_deleteDate = DateTime.Now;
-                        db.Users.Remove(oUserDB);
+                        //db.Users.Remove(oUserDB);
                         db.SaveChanges();
                         rta.response = true;
                         rta.message = "Se ha eliminado el usuario: " + oUserDB.usr_name + " de la base de datos";

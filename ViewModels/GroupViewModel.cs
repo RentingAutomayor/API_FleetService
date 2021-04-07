@@ -41,6 +41,7 @@ namespace API_FleetService.ViewModels
             Groups groupToInsert = new Groups();
             groupToInsert.grp_name = pGorup.groupName;
             groupToInsert.grp_description = pGorup.description;
+            groupToInsert.activo = true;
 
             return groupToInsert;
         }
@@ -52,7 +53,7 @@ namespace API_FleetService.ViewModels
                 bool rta = false;
                 using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
                 {
-                    var groupDB = db.Groups.Where(gr => gr.grp_name == pGroup_name).FirstOrDefault();
+                    var groupDB = db.Groups.Where(gr => gr.grp_name == pGroup_name && gr.activo == true).FirstOrDefault();
                     if (groupDB != null)
                     {
                         rta = true;
@@ -73,7 +74,7 @@ namespace API_FleetService.ViewModels
                 int rta = 0;
                 using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
                 {
-                    var groupDB = db.Groups.Where(gr => gr.grp_name == pGroup_name).FirstOrDefault();
+                    var groupDB = db.Groups.Where(gr => gr.grp_name == pGroup_name && gr.activo == true).FirstOrDefault();
                     if (groupDB != null)
                     {
                         rta = groupDB.grp_id;
