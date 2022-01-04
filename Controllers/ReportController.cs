@@ -101,7 +101,7 @@ namespace API_FleetService.Controllers
 				}
 
 				[HttpGet]
-				public IHttpActionResult getWorkOrderFinisedByVehicle(int? client_id = null, int? dealer_id = null, string license_plate = null, DateTime? init_date = null, DateTime? end_date = null)
+				public IHttpActionResult getWorkOrderFinishedByVehicle(int? client_id = null, int? dealer_id = null, string license_plate = null, DateTime? init_date = null, DateTime? end_date = null)
 				{
 						try
 						{
