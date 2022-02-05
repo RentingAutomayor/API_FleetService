@@ -712,13 +712,16 @@ namespace API_FleetService.Controllers
 										{
 												foreach (var oldPrice in lsOldPrices)
 												{
-														var newPrice = pricesByDealer.lsMaintenanceItems.Find(mi => mi.id == oldPrice.mi_id);
-														if (oldPrice.mi_referencePrice != newPrice.referencePrice)
-														{
-																PricesByDealer priceByDealer = db.PricesByDealer.Where(pbd => pbd.pbd_id == oldPrice.pbd_id).FirstOrDefault();
-																this.setDataPrice((int)pricesByDealer.dealer.id, (int)oldPrice.mi_id, (float)newPrice.referencePrice, "UPDATE", ref priceByDealer);
-																db.SaveChanges();
-														}														
+														var newPrice = pricesByDealer.lsMaintenanceItems.Find(mi => mi.id == oldPrice.mi_id && mi.state == true);
+														if (newPrice != null) {
+																if (oldPrice.mi_referencePrice != newPrice.referencePrice)
+																{
+																		PricesByDealer priceByDealer = db.PricesByDealer.Where(pbd => pbd.pbd_id == oldPrice.pbd_id).FirstOrDefault();
+																		this.setDataPrice((int)pricesByDealer.dealer.id, (int)oldPrice.mi_id, (float)newPrice.referencePrice, "UPDATE", ref priceByDealer);
+																		db.SaveChanges();
+																}
+														}
+																										
 												}
 
 
