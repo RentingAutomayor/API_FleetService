@@ -120,8 +120,7 @@ namespace API_FleetService.Controllers
 																trxDetail.trx_relation_id = (transaction.headerDetails.relatedTransaction != null) ? transaction.headerDetails.relatedTransaction.id : null;
 																if (transaction.headerDetails.vehicle != null)
 																{
-																		VehicleController vehController = new VehicleController();
-																		vehController.Update(transaction.headerDetails.vehicle);
+																		VehicleController.UpdateVehicle(transaction.headerDetails.vehicle);
 																}
 																trxDetail.veh_id = (transaction.headerDetails.vehicle != null) ? transaction.headerDetails.vehicle.id : null;
 																trxDetail.deal_id = (transaction.headerDetails.dealer != null) ? transaction.headerDetails.dealer.id : null;

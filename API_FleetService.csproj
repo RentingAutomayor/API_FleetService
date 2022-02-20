@@ -171,6 +171,7 @@
     <Compile Include="Controllers\ClientController.cs" />
     <Compile Include="Controllers\ContactController.cs" />
     <Compile Include="Controllers\ContractController.cs" />
+    <Compile Include="Controllers\ContractualInformationController.cs" />
     <Compile Include="Controllers\DealerController.cs" />
     <Compile Include="Controllers\FinancialInformationController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
@@ -186,15 +187,20 @@
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
+    <Compile Include="Models\IBranchModel.cs" />
+    <Compile Include="Models\IBussinessObject.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ViewModels\BranchViewModel.cs" />
     <Compile Include="ViewModels\BrandViewModel.cs" />
     <Compile Include="ViewModels\CategoryViewModel.cs" />
     <Compile Include="ViewModels\CityViewModel.cs" />
     <Compile Include="ViewModels\ClientViewModel.cs" />
+    <Compile Include="ViewModels\Contact.model.cs" />
     <Compile Include="ViewModels\ContactViewModel.cs" />
     <Compile Include="ViewModels\ContractState.cs" />
     <Compile Include="ViewModels\ContractStateViewModel.cs" />
+    <Compile Include="Models\ContractualInformationModel.cs" />
+    <Compile Include="ViewModels\ContractualInformationViewModel.cs" />
     <Compile Include="ViewModels\ContractViewModel.cs" />
     <Compile Include="ViewModels\DealerViewModel.cs" />
     <Compile Include="ViewModels\DepartmentViewModel.cs" />
@@ -211,10 +217,12 @@
     <Compile Include="ViewModels\MaintenanceRoutineViewModel.cs" />
     <Compile Include="ViewModels\MovementTypeViewModel.cs" />
     <Compile Include="ViewModels\MovementViewModel.cs" />
+    <Compile Include="ViewModels\Person.model.cs" />
     <Compile Include="ViewModels\PersonViewModel.cs" />
     <Compile Include="ViewModels\PresentationUnitViewModel.cs" />
     <Compile Include="ViewModels\PricesByContractViewModel.cs" />
     <Compile Include="ViewModels\PricesByDealerViewModel.cs" />
+    <Compile Include="ViewModels\QuotaTypeViewModel.cs" />
     <Compile Include="ViewModels\ResponseApiViewModel.cs" />
     <Compile Include="ViewModels\TaxViewModel.cs" />
     <Compile Include="ViewModels\TransactionDetailViewModel.cs" />
@@ -284,7 +292,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
-    <Folder Include="Models\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="fonts\glyphicons-halflings-regular.woff2" />

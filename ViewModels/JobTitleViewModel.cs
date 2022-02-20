@@ -5,6 +5,7 @@ using System.Web;
 
 namespace API_FleetService.ViewModels
 {
+		
 		public class JobTitleViewModel
 		{
 				public Nullable<int> id;

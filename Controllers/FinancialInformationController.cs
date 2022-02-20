@@ -137,6 +137,35 @@ namespace API_FleetService.Controllers
 								return BadRequest(ex.Message);
 						}
 				}
+
+				public static FinancialInformationViewModel GetFinancialInformationByClientId(int client_id)
+				{
+						try
+						{
+								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+								{
+										var oFinancialInformation = db.FinancialInformationByClient.Where(cl => cl.cli_id == client_id && cl.ficl_state == true)
+																										.Select(fi => new FinancialInformationViewModel
+																										{
+																												id = fi.ficl_id,
+																												approvedQuota = (double)fi.ficl_approvedQuota,
+																												currentQuota = (double)fi.ficl_currentQuota,
+																												consumedQuota = (double)fi.ficl_consumedQuota,
+																												inTransitQuota = (double)fi.ficl_inTransitQuota
+																										})
+																										.FirstOrDefault();
+										return oFinancialInformation;
+								}
+
+						}
+						catch (Exception ex)
+						{
+								return null;
+						}
+				}
+
+
+
 		}
 }
 

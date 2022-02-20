@@ -64,6 +64,35 @@ namespace API_FleetService.Controllers
 						}
 				}
 
+				[HttpGet]
+				public IHttpActionResult Get()
+				{
+						try
+						{
+								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+								{
+										var lsDepartments = db.Cities
+												.Select(
+												cty => new CityViewModel
+												{
+														id = cty.cty_id,
+														name = cty.cty_name,
+														state = cty.cty_state,
+														departmentId = cty.dpt_id
+
+												}).ToList();
+										return Ok(lsDepartments);
+								}
+
+						}
+						catch (Exception ex)
+						{
+
+								return BadRequest(ex.Message);
+						}
+				}
+
+
 
 		}
 }

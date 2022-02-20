@@ -3,32 +3,27 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using DAO_FleetService;
+using API_FleetService.Models;
 
 namespace API_FleetService.ViewModels
 {
-		public class BranchViewModel: PersonViewModel
+		public class BranchViewModel : IBranchModelDTO
 		{
-				public bool isMain;
-				public CityViewModel city;
-				public int Client_id;
-				public int Dealer_id;
-
-				public static branch setDataBranch(BranchViewModel pBranch) {
-						branch oBranch = new branch();
-						oBranch.bra_name = pBranch.name;
-						oBranch.bra_adress = pBranch.address;
-						oBranch.bra_phone = pBranch.phone;
-						oBranch.bra_cellphone = pBranch.cellphone;
-						oBranch.cty_id = (pBranch.city != null) ? pBranch.city.id : null;
-						oBranch.bra_state = true;
-						oBranch.bra_registrationDate = DateTime.Now;
-						if (pBranch.Client_id != 0) {
-								oBranch.cli_id = pBranch.Client_id;
-						}
-						if (pBranch.Dealer_id != 0) {
-								oBranch.deal_id = pBranch.Dealer_id;
-						}
-						return oBranch;
-				}
+				public int? Client_id { get; set; }
+				public int? Dealer_id { get; set; }
+				public bool isMain { get; set; }
+				public CityViewModel city { get; set; }
+				public int? id { get; set; }
+				public string document { get; set; }
+				public string name { get; set; }
+				public string lastname { get; set; }
+				public string phone { get; set; }
+				public string cellphone { get; set; }
+				public string address { get; set; }
+				public string website { get; set; }
+				public bool? state { get; set; }
+				public DateTime? registrationDate { get; set; }
+				public DateTime? updateDate { get; set; }
+				public DateTime? deleteDate { get; set; }
 		}
 }
