@@ -28,7 +28,8 @@ namespace API_FleetService.ViewModels
 				public List<TaxViewModel> lsTaxes;
 				public DealerViewModel dealer;
 				public Nullable<DateTime> registrationDate;
-
+				public Nullable<DateTime> updateDate;
+				public Nullable<DateTime> deleteDate;
 
 				public static MaintenanceItem setDataToItem(MaintenanceItemViewModel pItem) {
 						if (pItem.code.Trim() == "") {
