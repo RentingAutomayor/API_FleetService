@@ -209,7 +209,7 @@ namespace API_FleetService.Controllers
         }
 
 
-        [HttpPost]
+        [HttpPut]
         public IHttpActionResult Update(MaintenanceItemViewModel pItem)
         {
             try
@@ -301,23 +301,23 @@ namespace API_FleetService.Controllers
         }
 
 
-        [HttpPost]
-        public IHttpActionResult Delete(MaintenanceItemViewModel pItem)
+        [HttpDelete]
+        public IHttpActionResult Delete(int maintenanceItemId)
         {
             try
             {
                 using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
                 {
                     ResponseApiViewModel rta = new ResponseApiViewModel();
-                    var oItemDB = db.MaintenanceItem.Where(it => it.mi_id == pItem.id).FirstOrDefault();
+                    var oItemDB = db.MaintenanceItem.Where(it => it.mi_id == maintenanceItemId).FirstOrDefault();
                     oItemDB.mi_state = false;
                     oItemDB.mi_deleteDate = DateTime.Now;
                     db.SaveChanges();
 
-                    MaintenanceItemViewModel.DeleteMaintenanceItemOfVehicleTypesAndModels((int)pItem.id);
+                    MaintenanceItemViewModel.DeleteMaintenanceItemOfVehicleTypesAndModels(maintenanceItemId);
 
                     rta.response = true;
-                    rta.message = "Se ha eliminado el artículo de mantenimiento: " + pItem.name + " de la base de datos";
+                    rta.message = "Se ha eliminado el artículo de mantenimiento de la base de datos";
                     return Ok(rta);
                 }
             }

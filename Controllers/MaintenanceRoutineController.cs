@@ -80,12 +80,12 @@ namespace API_FleetService.Controllers
 																																referencePrice = mr.mr_referencePrice,
 																																registrationDate = mr.mr_registrationDate
 
-																														}).ToList()
-																														.Take(100);
+																														}).ToList();
+																														
 
 										}
 										else {
-												lsMaintenanceRoutines = db.maintenanceRoutine.Where(mr => mr.mr_state == true  &&( mr.vm_id == vehicleModel_id || mr.frequency.fq_id == frequency_id))
+												lsMaintenanceRoutines = db.maintenanceRoutine.Where(mr => mr.mr_state == true && (mr.vm_id == vehicleModel_id || mr.frequency.fq_id == frequency_id))
 																																.Select(mr => new MaintenanceRoutineViewModel
 																																{
 																																		id = mr.mr_id,
@@ -116,8 +116,8 @@ namespace API_FleetService.Controllers
 																																		referencePrice = mr.mr_referencePrice,
 																																		registrationDate = mr.mr_registrationDate
 
-																																}).ToList()
-																																.Take(100);
+																																}).ToList();
+																																
 										}
 
 										return Ok(lsMaintenanceRoutines);
@@ -387,7 +387,7 @@ namespace API_FleetService.Controllers
 
 				[HttpPost]
 
-				public IHttpActionResult Insert(MaintenanceRoutineViewModel pRoutine)
+				public IHttpActionResult Insert(MaintenanceRoutineViewModel routine)
 				{
 						try
 						{
@@ -396,41 +396,41 @@ namespace API_FleetService.Controllers
 										ResponseApiViewModel rta = new ResponseApiViewModel();
 										maintenanceRoutine routineDB = new maintenanceRoutine();
 
-										if (pRoutine.name == "")
+										if (routine.name == "")
 										{
 												throw new Exception("El nombre de la rutina no puede ser vacío");
 										}
 
-										if (pRoutine.vehicleModel == null)
+										if (routine.vehicleModel == null)
 										{
 												throw new Exception("La rutina de mantenimiento debe tener una línea asociada");
 										}
 
 
-										if (pRoutine.frequency == null)
+										if (routine.frequency == null)
 										{
 												throw new Exception("La rutina de mantenimiento debe tener una frecuencia asociada");
 										}
 
 
-										routineDB.mr_name = pRoutine.name.ToUpper();
-										routineDB.mr_description = pRoutine.description;
-										routineDB.vm_id = pRoutine.vehicleModel.id;
-										routineDB.fq_id = pRoutine.frequency.id;
-										routineDB.mr_referencePrice = pRoutine.referencePrice;
+										routineDB.mr_name = routine.name.ToUpper();
+										routineDB.mr_description = routine.description;
+										routineDB.vm_id = routine.vehicleModel.id;
+										routineDB.fq_id = routine.frequency.id;
+										routineDB.mr_referencePrice = routine.referencePrice;
 										routineDB.mr_state = true;
 										routineDB.mr_registrationDate = DateTime.Now;
 
 										db.maintenanceRoutine.Add(routineDB);
 										db.SaveChanges();
 
-										var oRoutineDB = db.maintenanceRoutine.Where(mr => mr.mr_name == pRoutine.name.ToUpper()
-																																&& mr.vm_id == pRoutine.vehicleModel.id
-																																&& mr.fq_id == pRoutine.frequency.id)
+										var oRoutineDB = db.maintenanceRoutine.Where(mr => mr.mr_name == routine.name.ToUpper()
+																																&& mr.vm_id == routine.vehicleModel.id
+																																&& mr.fq_id == routine.frequency.id)
 																																.OrderByDescending(mr => mr.mr_registrationDate)
 																																.FirstOrDefault();
 
-										foreach (var item in pRoutine.lsItems)
+										foreach (var item in routine.lsItems)
 										{
 												ItemsByRoutines oItemByRoutine = new ItemsByRoutines();
 												oItemByRoutine.mr_id = oRoutineDB.mr_id;
@@ -443,7 +443,7 @@ namespace API_FleetService.Controllers
 
 
 										rta.response = true;
-										rta.message = "Se ha insertado en la base de datos la rutina: " + pRoutine.name;
+										rta.message = "Se ha insertado en la base de datos la rutina: " + routine.name;
 
 										return Ok(rta);
 								}
@@ -454,9 +454,9 @@ namespace API_FleetService.Controllers
 						}
 				}
 
-				[HttpPost]
+				[HttpPut]
 
-				public IHttpActionResult Update(MaintenanceRoutineViewModel pRoutine)
+				public IHttpActionResult Update(MaintenanceRoutineViewModel routine)
 				{
 						try
 						{
@@ -465,33 +465,33 @@ namespace API_FleetService.Controllers
 										ResponseApiViewModel rta = new ResponseApiViewModel();
 										
 
-										if (pRoutine.name == "")
+										if (routine.name == "")
 										{
 												throw new Exception("El nombre de la rutina no puede ser vacío");
 										}
 
-										if (pRoutine.vehicleModel == null)
+										if (routine.vehicleModel == null)
 										{
 												throw new Exception("La rutina de mantenimiento debe tener una línea asociada");
 										}
 
 
-										if (pRoutine.frequency == null)
+										if (routine.frequency == null)
 										{
 												throw new Exception("La rutina de mantenimiento debe tener una frecuencia asociada");
 										}
 
-										var routineDB = db.maintenanceRoutine.Where(mr => mr.mr_id == pRoutine.id).FirstOrDefault();
+										var routineDB = db.maintenanceRoutine.Where(mr => mr.mr_id == routine.id).FirstOrDefault();
 
-										routineDB.mr_name = pRoutine.name.ToUpper();
-										routineDB.mr_description = pRoutine.description;
-										routineDB.vm_id = pRoutine.vehicleModel.id;
-										routineDB.fq_id = pRoutine.frequency.id;
-										routineDB.mr_referencePrice = pRoutine.referencePrice;										
+										routineDB.mr_name = routine.name.ToUpper();
+										routineDB.mr_description = routine.description;
+										routineDB.vm_id = routine.vehicleModel.id;
+										routineDB.fq_id = routine.frequency.id;
+										routineDB.mr_referencePrice = routine.referencePrice;										
 										routineDB.mr_updateDate = DateTime.Now;
 										db.SaveChanges();
 
-										var lsOldItems = db.ItemsByRoutines.Where(ibr => ibr.mr_id == pRoutine.id).ToList();
+										var lsOldItems = db.ItemsByRoutines.Where(ibr => ibr.mr_id == routine.id).ToList();
 
 										foreach (var oldItem in lsOldItems) {
 												db.ItemsByRoutines.Remove(oldItem);
@@ -500,7 +500,7 @@ namespace API_FleetService.Controllers
 										
 									
 
-										foreach (var item in pRoutine.lsItems)
+										foreach (var item in routine.lsItems)
 										{
 												ItemsByRoutines oItemByRoutine = new ItemsByRoutines();
 												oItemByRoutine.mr_id = routineDB.mr_id;
@@ -513,7 +513,7 @@ namespace API_FleetService.Controllers
 
 
 										rta.response = true;
-										rta.message = "La rutina " + pRoutine.name + " se ha actualizado en la base de datos.";
+										rta.message = "La rutina " + routine.name + " se ha actualizado en la base de datos.";
 
 										return Ok(rta);
 								}
@@ -526,18 +526,18 @@ namespace API_FleetService.Controllers
 
 
 
-				[HttpPost]
-				public IHttpActionResult Delete(MaintenanceRoutineViewModel pRoutine) {
+				[HttpDelete]
+				public IHttpActionResult Delete(int routineId) {
 						try
 						{
 								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities()) {
-										var oRoutineDb = db.maintenanceRoutine.Where(mr => mr.mr_id == pRoutine.id).FirstOrDefault();
+										var oRoutineDb = db.maintenanceRoutine.Where(mr => mr.mr_id == routineId).FirstOrDefault();
 										oRoutineDb.mr_state = false;
 										oRoutineDb.mr_deleteDate = DateTime.Now;
 										db.SaveChanges();
 										var rta = new ResponseApiViewModel();
 										rta.response = true;
-										rta.message = "Se ha eliminado de la base de datos la rutina: " + pRoutine.name; 
+										rta.message = "Se ha eliminado de la base de datos la rutina: " + oRoutineDb.mr_name; 
 										return Ok(rta);
 								}
 						}
