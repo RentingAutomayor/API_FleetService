@@ -9,6 +9,7 @@ namespace API_FleetService.ViewModels
 		{
 				public Nullable<int> id;
 				public string description;
+				public string movementDescription;
 				//TODO: change this by the model of users
 				public Nullable<int> usu_id;
 				public UserAccessViewModel user;
