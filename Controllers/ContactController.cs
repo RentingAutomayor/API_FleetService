@@ -388,7 +388,10 @@ namespace API_FleetService.Controllers
 																jobTitle = (cnt.jtcl_id != null) ? new JobTitleViewModel { id = cnt.jtcl_id, description = cnt.JobTitlesClient.jtcl_description } : null,
 																Client_id = (cnt.cli_id != null) ? cnt.cli_id : null,
 																Dealer_id = (cnt.deal_id != null) ? cnt.deal_id : null,
-																registrationDate = cnt.cnt_registrationDate
+																registrationDate = cnt.cnt_registrationDate,
+																mustNotify = cnt.cnt_mustNotify,
+																type = (cnt.cnttp_id != null) ? new ViewModels.ContactType { id = cnt.cnttp_id, name = cnt.ContactType.cnttp_name } : null,																
+																updateDate = cnt.cnt_updateDate
 
 														}).FirstOrDefault();
 								return contact;
