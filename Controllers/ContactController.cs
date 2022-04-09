@@ -35,7 +35,10 @@ namespace API_FleetService.Controllers
 																			address = cnt.cnt_adress,
 																			city = (cnt.cty_id != null) ? new CityViewModel { id = cnt.cty_id, name = cnt.Cities.cty_name, departmentId = cnt.Cities.dpt_id } : null,
 																			jobTitle = (cnt.jtcl_id != null) ? new JobTitleViewModel { id = cnt.jtcl_id, description = cnt.JobTitlesClient.jtcl_description } : null,
-																			registrationDate = cnt.cnt_registrationDate
+																			mustNotify = cnt.cnt_mustNotify,
+																			type = (cnt.cnttp_id != null) ? new ViewModels.ContactType { id = cnt.cnttp_id, name = cnt.ContactType.cnttp_name } : null,
+																			registrationDate = cnt.cnt_registrationDate,
+																			updateDate= cnt.cnt_updateDate
 
 																	}).ToList();
 														break;
@@ -53,7 +56,10 @@ namespace API_FleetService.Controllers
 																			address = cnt.cnt_adress,
 																			city = (cnt.cty_id != null) ? new CityViewModel { id = cnt.cty_id, name = cnt.Cities.cty_name, departmentId = cnt.Cities.dpt_id } : null,
 																			jobTitle = (cnt.jtcl_id != null) ? new JobTitleViewModel { id = cnt.jtcl_id, description = cnt.JobTitlesClient.jtcl_description } : null,
-																			registrationDate = cnt.cnt_registrationDate
+																			mustNotify = cnt.cnt_mustNotify,
+																			type = (cnt.cnttp_id != null) ? new ViewModels.ContactType { id = cnt.cnttp_id, name = cnt.ContactType.cnttp_name } : null,
+																			registrationDate = cnt.cnt_registrationDate,
+																			updateDate = cnt.cnt_updateDate
 
 																	}).ToList();
 														break;
@@ -92,9 +98,11 @@ namespace API_FleetService.Controllers
 																			address = cnt.cnt_adress,
 																			city = (cnt.cty_id != null) ? new CityViewModel { id = cnt.cty_id, name = cnt.Cities.cty_name, departmentId = cnt.Cities.dpt_id } : null,
 																			jobTitle = (cnt.jtcl_id != null) ? new JobTitleViewModel { id = cnt.jtcl_id, description = cnt.JobTitlesClient.jtcl_description } : null,
-																			registrationDate = cnt.cnt_registrationDate
-
-																	}).FirstOrDefault();
+																			mustNotify = cnt.cnt_mustNotify,
+																			type = (cnt.cnttp_id != null)? new ViewModels.ContactType { id = cnt.cnttp_id, name = cnt.ContactType.cnttp_name} : null,
+																			registrationDate = cnt.cnt_registrationDate,
+																			updateDate = cnt.cnt_updateDate
+																	}).FirstOrDefault(); 
 
 										return Ok(oContact);
 								}
@@ -103,6 +111,32 @@ namespace API_FleetService.Controllers
 						{
 								return BadRequest(ex.Message);
 						}
+				}
+
+				[HttpGet]
+				public IHttpActionResult getContactTypes() {
+						try
+						{
+								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+								{
+										var lsContactTypes = db.ContactType.Where(ct => ct.cnttp_state == true)
+												.Select(ct =>
+													 new ViewModels.ContactType
+													 {
+															 id = ct.cnttp_id,
+															 name = ct.cnttp_name
+													 }
+												 ).ToList<ViewModels.ContactType>();
+
+										return Ok(lsContactTypes);                                 
+								}
+							
+						}
+						catch (Exception ex)
+						{
+								return BadRequest(ex.Message);
+						}
+
 				}
 
 				[HttpPost]
@@ -244,8 +278,13 @@ namespace API_FleetService.Controllers
 										contactDB.jtcl_id = jobId;
 								}
 						}
+
 						contactDB.cty_id = (contact.city != null) ? contact.city.id : null;
-						contactDB.bra_id = (contact.branch != null) ? contact.branch.id : null;
+						contactDB.bra_id = (contact.branch != null) ? contact.branch.id : null;						
+						contactDB.cnttp_id = (contact.type != null) ? contact.type.id : null;
+						contactDB.cnt_mustNotify = (contact.mustNotify!=null)? contact.mustNotify : false;					
+						
+
 						if (contact.Client_id != 0)
 						{
 								contactDB.cli_id = contact.Client_id;
@@ -256,9 +295,14 @@ namespace API_FleetService.Controllers
 								contactDB.deal_id = contact.Dealer_id;
 						}						
 						contactDB.cnt_state = true;
-						if (isToInsert) {
+
+						if (isToInsert)
+						{
 								contactDB.cnt_registrationDate = DateTime.Now;
-						}						
+						}
+						else {
+								contactDB.cnt_updateDate = DateTime.Now;
+						}				
 						
 				}
 
@@ -366,7 +410,10 @@ namespace API_FleetService.Controllers
 													email = cnt.cnt_email,
 													address = cnt.cnt_adress,
 													jobTitle = (cnt.jtcl_id != null) ? new JobTitleViewModel { id = cnt.jtcl_id, description = cnt.JobTitlesClient.jtcl_description, state = cnt.cnt_state } : null,
-													registrationDate = cnt.cnt_registrationDate
+													registrationDate = cnt.cnt_registrationDate,
+													updateDate = cnt.cnt_updateDate,
+													mustNotify = cnt.cnt_mustNotify,
+													type = (cnt.cnttp_id != null)? new ViewModels.ContactType { id = cnt.cnttp_id, name = cnt.ContactType.cnttp_name} : null
 											}).ToList();
 								return lsContacts;
 						}
@@ -386,13 +433,17 @@ namespace API_FleetService.Controllers
 													cellphone = cnt.cnt_cellPhone,
 													address = cnt.cnt_adress,
 													jobTitle = (cnt.jtcl_id != null) ? new JobTitleViewModel { id = cnt.jtcl_id, description = cnt.JobTitlesClient.jtcl_description, state = cnt.cnt_state } : null,
-													registrationDate = cnt.cnt_registrationDate
+													registrationDate = cnt.cnt_registrationDate,
+													updateDate = cnt.cnt_updateDate,
+													mustNotify = cnt.cnt_mustNotify,
+													type = (cnt.cnttp_id != null) ? new ViewModels.ContactType { id = cnt.cnttp_id, name = cnt.ContactType.cnttp_name } : null
 											}).ToList();
 								return lsContacts;
 						}
+
+
 				}
-
-
+			
 
 		}
 }

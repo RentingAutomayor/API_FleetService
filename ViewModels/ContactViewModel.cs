@@ -27,5 +27,9 @@ namespace API_FleetService.ViewModels
 				public BranchViewModel branch { get ; set ; }
 				public int? Client_id { get ; set ; }
 				public int? Dealer_id { get ; set ; }
+
+				public bool? mustNotify { get; set; }
+
+				public ContactType type { get; set; }
 		}
 }
