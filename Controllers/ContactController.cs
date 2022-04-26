@@ -439,7 +439,8 @@ namespace API_FleetService.Controllers
 													registrationDate = cnt.cnt_registrationDate,
 													updateDate = cnt.cnt_updateDate,
 													mustNotify = cnt.cnt_mustNotify,
-													type = (cnt.cnttp_id != null) ? new ViewModels.ContactType { id = cnt.cnttp_id, name = cnt.ContactType.cnttp_name } : null
+													type = (cnt.cnttp_id != null) ? new ViewModels.ContactType { id = cnt.cnttp_id, name = cnt.ContactType.cnttp_name } : null,
+													email = cnt.cnt_email
 											}).ToList();
 								return lsContacts;
 						}
