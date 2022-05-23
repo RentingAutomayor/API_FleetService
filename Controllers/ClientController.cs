@@ -289,13 +289,6 @@ namespace API_FleetService.Controllers
 								throw new Exception("El documento del cliente no es válido");
 						}
 
-						long numberOfDocument;
-						bool documentIsValid = long.TryParse(pClient.document, out numberOfDocument);
-
-						if (!documentIsValid)
-						{
-								throw new Exception("El documento del cliente no es válido, intente ingresarlo sin dígito de verificación, sin puntos ni comas.");
-						}
 
 						if (pClient.name.Trim() == "")
 						{
