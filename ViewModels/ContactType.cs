@@ -14,5 +14,6 @@ namespace API_FleetService.ViewModels
 				public DateTime registrationDate { get; set; }
 				public DateTime? updateDate { get; set; }
 				public DateTime? deleteDate { get; set; }
-		}
+				public List<ContactsWithTypesViewModel> contactsWithTypes { get; set; }
+	}
 }
