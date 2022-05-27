@@ -36,7 +36,7 @@ namespace API_FleetService.Controllers
 																			city = (cnt.cty_id != null) ? new CityViewModel { id = cnt.cty_id, name = cnt.Cities.cty_name, departmentId = cnt.Cities.dpt_id } : null,
 																			jobTitle = (cnt.jtcl_id != null) ? new JobTitleViewModel { id = cnt.jtcl_id, description = cnt.JobTitlesClient.jtcl_description } : null,
 																			mustNotify = cnt.cnt_mustNotify,
-																			type = (cnt.cnttp_id != null) ? new ViewModels.ContactType { id = cnt.cnttp_id, name = cnt.ContactType.cnttp_name } : null,
+																			//tipo de concacto aqui va
 																			registrationDate = cnt.cnt_registrationDate,
 																			updateDate= cnt.cnt_updateDate
 
@@ -57,7 +57,7 @@ namespace API_FleetService.Controllers
 																			city = (cnt.cty_id != null) ? new CityViewModel { id = cnt.cty_id, name = cnt.Cities.cty_name, departmentId = cnt.Cities.dpt_id } : null,
 																			jobTitle = (cnt.jtcl_id != null) ? new JobTitleViewModel { id = cnt.jtcl_id, description = cnt.JobTitlesClient.jtcl_description } : null,
 																			mustNotify = cnt.cnt_mustNotify,
-																			type = (cnt.cnttp_id != null) ? new ViewModels.ContactType { id = cnt.cnttp_id, name = cnt.ContactType.cnttp_name } : null,
+																			// tipo de contacto para el dealer aqui va 
 																			registrationDate = cnt.cnt_registrationDate,
 																			updateDate = cnt.cnt_updateDate
 
@@ -99,9 +99,10 @@ namespace API_FleetService.Controllers
 																			city = (cnt.cty_id != null) ? new CityViewModel { id = cnt.cty_id, name = cnt.Cities.cty_name, departmentId = cnt.Cities.dpt_id } : null,
 																			jobTitle = (cnt.jtcl_id != null) ? new JobTitleViewModel { id = cnt.jtcl_id, description = cnt.JobTitlesClient.jtcl_description } : null,
 																			mustNotify = cnt.cnt_mustNotify,
-																			type = (cnt.cnttp_id != null)? new ViewModels.ContactType { id = cnt.cnttp_id, name = cnt.ContactType.cnttp_name} : null,
+																			// get tipo de contacto por id aqui va
 																			registrationDate = cnt.cnt_registrationDate,
 																			updateDate = cnt.cnt_updateDate
+																			
 																	}).FirstOrDefault(); 
 
 										return Ok(oContact);
@@ -116,7 +117,7 @@ namespace API_FleetService.Controllers
 				[HttpGet]
 				public IHttpActionResult getContactTypes() {
 						try
-						{
+						{ // revisar para cambiarlo por la obtencion de tipos de contacto
 								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
 								{
 										var lsContactTypes = db.ContactType.Where(ct => ct.cnttp_state == true)
@@ -281,7 +282,7 @@ namespace API_FleetService.Controllers
 
 						contactDB.cty_id = (contact.city != null) ? contact.city.id : null;
 						contactDB.bra_id = (contact.branch != null) ? contact.branch.id : null;						
-						contactDB.cnttp_id = (contact.type != null) ? contact.type.id : null;
+						//aqui se consultaba el tipo de contacto
 						contactDB.cnt_mustNotify = (contact.mustNotify!=null)? contact.mustNotify : false;					
 						
 
@@ -390,7 +391,7 @@ namespace API_FleetService.Controllers
 																Dealer_id = (cnt.deal_id != null) ? cnt.deal_id : null,
 																registrationDate = cnt.cnt_registrationDate,
 																mustNotify = cnt.cnt_mustNotify,
-																type = (cnt.cnttp_id != null) ? new ViewModels.ContactType { id = cnt.cnttp_id, name = cnt.ContactType.cnttp_name } : null,																
+																//aqui me iba el tipo de contacto
 																updateDate = cnt.cnt_updateDate
 
 														}).FirstOrDefault();
@@ -416,7 +417,7 @@ namespace API_FleetService.Controllers
 													registrationDate = cnt.cnt_registrationDate,
 													updateDate = cnt.cnt_updateDate,
 													mustNotify = cnt.cnt_mustNotify,
-													type = (cnt.cnttp_id != null)? new ViewModels.ContactType { id = cnt.cnttp_id, name = cnt.ContactType.cnttp_name} : null
+													//aqui me iba el tipo de contacto
 											}).ToList();
 								return lsContacts;
 						}
@@ -439,7 +440,7 @@ namespace API_FleetService.Controllers
 													registrationDate = cnt.cnt_registrationDate,
 													updateDate = cnt.cnt_updateDate,
 													mustNotify = cnt.cnt_mustNotify,
-													type = (cnt.cnttp_id != null) ? new ViewModels.ContactType { id = cnt.cnttp_id, name = cnt.ContactType.cnttp_name } : null,
+													//aqui me iba el tipo de contacto
 													email = cnt.cnt_email
 											}).ToList();
 								return lsContacts;
