@@ -45,10 +45,8 @@ namespace API_FleetService.Controllers
                     }
                     userBd.usr_firstName = userViewModel.name;
                     userBd.usr_lastName = userViewModel.lastName;
-                    userBd.usr_password = userViewModel.password;
                     userBd.cpn_id = userViewModel.company.id;
                     userBd.grp_id = userViewModel.roleId;
-                    userBd.email = userViewModel.email;
                     userBd.user_status = userViewModel.status;
                     db.SaveChanges();
                     return Ok();
