@@ -48,5 +48,45 @@ namespace API_FleetService.Controllers
                 return BadRequest(e.Message);
             }
         }
+
+        [HttpGet]
+        public IHttpActionResult GetDealers()
+        {
+            try
+            {
+                using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+                {
+                    var dealers = db.Dealer.Select(dealer => new BasicLookup()
+                    {
+                        id = dealer.deal_id,
+                        name = dealer.deal_name
+                    }).ToList();
+                    return Ok(dealers);
+                }
+            }catch(Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+        }
+
+        [HttpGet]
+        public IHttpActionResult GetClients()
+        {
+            try
+            {
+                using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+                {
+                    var clients = db.Client.Select(client => new BasicLookup()
+                    {
+                        id = client.cli_id,
+                        name = client.cli_name
+                    }).ToList();
+                    return Ok(clients);
+                }
+            }catch(Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+        }
     }
 }

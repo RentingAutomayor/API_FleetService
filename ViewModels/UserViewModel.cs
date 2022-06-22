@@ -8,6 +8,8 @@
         public string email { get; set; }
         public CompanyViewModel company { get; set; }
         public int roleId { get; set; }
+        public int? clientId { get; set; }
+        public int? dealerId { get; set; }
         public string status { get; set; }
     }
 }
