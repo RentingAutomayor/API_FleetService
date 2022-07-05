@@ -20,13 +20,13 @@ namespace API_FleetService.Controllers
 
                 using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
                 {
-                    user = db.Users.Where(usr => usr.usr_name.Equals(userAut.user) && usr.usr_password.Equals(userAut.password))
+                    user = db.Users.Where(usr => usr.email.Equals(userAut.user))
                                         .Select(usr => new UserAccessViewModel
                                         {
                                             id_user = usr.usr_id,
                                             name = usr.usr_firstName,
                                             lastName = usr.usr_lastName,
-                                            user = usr.usr_name,
+                                            user = usr.email,
                                             id_group = usr.grp_id,
                                             company = new ViewModels.Company { 
                                                 id  = (usr.cpn_id != null) ? usr.cpn_id : ((usr.cli_id != null) ? usr.cli_id : (usr.deal_id != null) ? usr.deal_id : 0 ),
@@ -143,7 +143,7 @@ namespace API_FleetService.Controllers
                     var lsUser = db.Users.Select(usr => new UserAccessViewModel
                     {
                         id_user = usr.usr_id,
-                        user = usr.usr_name,
+                        user = usr.usr_firstName + usr.usr_lastName,
                         id_group = usr.grp_id
                     }).ToList();
 
@@ -171,7 +171,7 @@ namespace API_FleetService.Controllers
                             .Select(usr => new UserAccessViewModel
                             {
                                 id_user = usr.usr_id,
-                                user = usr.usr_name,
+                                user = usr.email,
                                 id_group = usr.grp_id
                             }).FirstOrDefault();
 
@@ -231,7 +231,7 @@ namespace API_FleetService.Controllers
                 using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
                 {
 
-                    var oUserDB = db.Users.Where(us => us.usr_id == pUser.idUser || us.usr_name == pUser.user)
+                    var oUserDB = db.Users.Where(us => us.usr_id == pUser.idUser || us.email == pUser.user)
                                                                     .FirstOrDefault();
                     if (oUserDB != null)
                     {
@@ -250,7 +250,7 @@ namespace API_FleetService.Controllers
                             throw new Exception("El usuario debe pertenecer a un grupo");
                         }
 
-                        oUserDB.usr_name = pUser.user;
+                        oUserDB.email = pUser.user;
                         oUserDB.usr_password = pUser.password;
                         oUserDB.grp_id = pUser.group;
 
@@ -293,7 +293,7 @@ namespace API_FleetService.Controllers
                         db.Users.Remove(oUserDB);
                         db.SaveChanges();
                         rta.response = true;
-                        rta.message = "Se ha eliminado el usuario: " + oUserDB.usr_name + " de la base de datos";
+                        rta.message = "Se ha eliminado el usuario: " + oUserDB.email + " de la base de datos";
                         return Ok(rta);
                     }
                     else

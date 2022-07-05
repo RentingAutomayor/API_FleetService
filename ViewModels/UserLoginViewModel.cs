@@ -53,7 +53,7 @@ namespace API_FleetService.ViewModels
             UserLoginViewModel.UsersHasError(pUser);
 
             Users usersToInsert = new Users();
-            usersToInsert.usr_name = pUser.user;
+            usersToInsert.email = pUser.user;
             usersToInsert.usr_password = pUser.password;
             usersToInsert.grp_id = pUser.group;
 
@@ -67,7 +67,7 @@ namespace API_FleetService.ViewModels
                 bool rta = false;
                 using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
                 {
-                    var userDB = db.Users.Where(us => us.usr_name == pUser_name).FirstOrDefault();
+                    var userDB = db.Users.Where(us => us.email == pUser_name).FirstOrDefault();
                     if (userDB != null)
                     {
                         rta = true;
