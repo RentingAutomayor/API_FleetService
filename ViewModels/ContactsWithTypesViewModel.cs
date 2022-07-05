@@ -13,9 +13,11 @@ namespace API_FleetService.ViewModels
 
         public int cnttp_id { get; set; }
 
+        public List<ContactTypeViewModel> types { get; set; }
+
         public virtual ContactViewModel contact { get; set; }
 
-        public virtual ContactType[] contactType { get; set; }
+        public virtual ContactTypeViewModel contactType { get; set; }
 
     }
 }
