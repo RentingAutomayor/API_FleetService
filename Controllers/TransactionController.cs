@@ -355,6 +355,7 @@ namespace API_FleetService.Controllers
 												transaction.headerDetails.branch.id = trx.bra_id;
 												transaction.headerDetails.branch.name = trx.bra_name;
 
+
 												lsTransactions.Add(transaction);
 										}
 
