@@ -45,7 +45,7 @@ namespace API_FleetService.Controllers
                     }
                     userBd.usr_firstName = userViewModel.name;
                     userBd.usr_lastName = userViewModel.lastName;
-                    userBd.cpn_id = userViewModel.company.id;
+                    userBd.cpn_id = userViewModel.company?.id;
                     userBd.grp_id = userViewModel.roleId;
                     userBd.cli_id = userViewModel.clientId;
                     userBd.deal_id = userViewModel.dealerId;

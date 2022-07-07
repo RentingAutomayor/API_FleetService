@@ -417,6 +417,46 @@ namespace API_FleetService.Controllers
             }
         }
 
+        [HttpPost]
+        public IHttpActionResult Update(SettingsViewModel settings)
+        {
+            try
+            {
+                using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+                {
+                    settings.rows.ForEach(row =>
+                    {
+                        var maintenance = db.MaintenanceItem.Where(item => item.mi_code == row.code).FirstOrDefault();
+                        if (maintenance is null) {
+                            MaintenanceItem maintenanceItem = new MaintenanceItem();
+                            maintenanceItem.mi_code = row.code;
+                            maintenanceItem.mi_name = row.name;
+                            maintenanceItem.mi_referencePrice = row.price;
+                            //maintenanceItem.mi_handleTax = true;
+                            maintenanceItem.pu_id = (int)row.unitId;
+                            maintenanceItem.tmi_id = (int)row.typeId;
+                            maintenanceItem.mict_id = (int)row.categoryId;
+                            maintenanceItem.mi_state = true;
+                            db.MaintenanceItem.Add(maintenanceItem);
+                        }
+                        else
+                        {
+                            maintenance.mi_referencePrice = row.price;
+                            maintenance.mict_id = (int)row.categoryId;
+                            maintenance.pu_id = (int)row.unitId;
+                            maintenance.mict_id = (int)row.categoryId;
+                            maintenance.mi_name = row.name;
+                        }
+                        db.SaveChanges();
+                    });
+                }
+                    return Ok();
+            }catch(Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+        }
+
 
         private static MaintenanceItemViewModel formatData(MaintenanceItem itemDB) {
 						try
