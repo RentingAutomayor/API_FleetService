@@ -30,7 +30,7 @@ namespace API_FleetService.ViewModels
 
 		public bool? mustNotify { get; set; }
 
-		public List<ContactsWithTypesViewModel> contactsWithTypes { get; set; }
+		public List<ContactTypeViewModel> types { get; set; }
 
 	}
 }
