@@ -45,8 +45,10 @@ namespace API_FleetService.Controllers
                     }
                     userBd.usr_firstName = userViewModel.name;
                     userBd.usr_lastName = userViewModel.lastName;
-                    userBd.cpn_id = userViewModel.company.id;
+                    userBd.cpn_id = userViewModel.company?.id;
                     userBd.grp_id = userViewModel.roleId;
+                    userBd.cli_id = userViewModel.clientId;
+                    userBd.deal_id = userViewModel.dealerId;
                     userBd.user_status = userViewModel.status;
                     db.SaveChanges();
                     return Ok();
@@ -105,7 +107,9 @@ namespace API_FleetService.Controllers
                                 name = u.Company.cpn_razonSocial == null ? "" : u.Company.cpn_razonSocial,
                                 nit = u.Company.cpn_nit == null ? "" : u.Company.cpn_nit
                             },
-                            status = u.user_status
+                            status = u.user_status,
+                            clientId = u.cli_id,
+                            dealerId = u.deal_id
                         }).FirstOrDefault();
                     if (user is null)
                     {
@@ -156,6 +160,8 @@ namespace API_FleetService.Controllers
                 email = userViewModel.email,
                 grp_id = userViewModel.roleId,
                 user_status = userViewModel.status,
+                cli_id = userViewModel.clientId,
+                deal_id = userViewModel.dealerId
             };
         }
     }

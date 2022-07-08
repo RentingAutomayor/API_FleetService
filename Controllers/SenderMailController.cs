@@ -4,6 +4,7 @@ using MailKit.Net.Smtp;
 using MimeKit;
 using System;
 using System.Web.Http;
+using DAO_FleetService;
 
 namespace API_FleetService.Controllers
 {
@@ -13,8 +14,13 @@ namespace API_FleetService.Controllers
         [HttpPost]
         public string send(SenderMail sendermail)
         {
-            // CONFIGURACION
-            var mailMessage = new MimeMessage();
+            EmailSettings emailSettings = new EmailSettings();
+            using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+            {
+                emailSettings = db.EmailSettings.Find(1);
+            }
+                // CONFIGURACION
+                var mailMessage = new MimeMessage();
 
             mailMessage.From.Add(new MailboxAddress(sendermail.nameMessage, "senior.developer.sinapsist@gmail.com"));
 
@@ -34,7 +40,7 @@ namespace API_FleetService.Controllers
 
                 smtpClient.Connect("smtp.gmail.com", 465, true);
 
-                smtpClient.Authenticate("senior.developer.sinapsist@gmail.com", "Sinapsis2022*");
+                smtpClient.Authenticate(emailSettings.email, emailSettings.password);
 
                 smtpClient.Send(mailMessage);
 

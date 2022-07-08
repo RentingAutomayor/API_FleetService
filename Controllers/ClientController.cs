@@ -265,6 +265,44 @@ namespace API_FleetService.Controllers
 						}
 				}
 
+        [HttpGet]
+		public IHttpActionResult DownloadPersonalized()
+        {
+            try
+            {
+				using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+                {
+					List<ClientViewModel> client = db.Client.Select(c => new ClientViewModel()
+					{
+						name = c.cli_name,
+						document = c.cli_document,
+						phone = c.cli_phone,
+						cellphone = c.cli_cellphone,
+						address = c.cli_adress,
+						website = c.cli_website,
+						city = new CityViewModel()
+                        {
+							name = c.Cities.cty_name
+                        },
+						contacts = c.Contact.Select(co => new ContactViewModel()
+                        {
+							name = co.cnt_name,
+							lastname = co.cnt_lastName,
+							email = co.cnt_email
+                        }).ToList(),
+						vehicles = c.Vehicle.Select(v => new VehicleViewModel()
+                        {
+							licensePlate = v.veh_licensePlate
+                        }).ToList()
+					}).ToList();
+					return Ok(client);
+                }
+            }catch(Exception e)
+            {
+				return BadRequest(e.Message);
+            }
+        }
+
 
 				public static Client PrepareCLientToInsertDB(ClientViewModel pClient)
 				{
