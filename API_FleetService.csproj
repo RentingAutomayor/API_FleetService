@@ -17,7 +17,7 @@
     <AssemblyName>API_FleetService</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <MvcBuildViews>false</MvcBuildViews>
-    <UseIISExpress>false</UseIISExpress>
+    <UseIISExpress>true</UseIISExpress>
     <Use64BitIISExpress />
     <IISExpressSSLPort>44318</IISExpressSSLPort>
     <IISExpressAnonymousAuthentication />
@@ -222,14 +222,10 @@
     <Compile Include="Areas\HelpPage\SampleGeneration\SampleDirection.cs" />
     <Compile Include="Areas\HelpPage\SampleGeneration\TextSample.cs" />
     <Compile Include="Areas\HelpPage\XmlDocumentationProvider.cs" />
-<<<<<<< Updated upstream
     <Compile Include="Controllers\AuthController.cs" />
     <Compile Include="Controllers\BillController.cs" />
     <Compile Include="Controllers\BillStateController.cs" />
-=======
     <Compile Include="Controllers\SettingsController.cs" />
-    <Compile Include="Controllers\AuthController.cs" />
->>>>>>> Stashed changes
     <Compile Include="Controllers\BranchController.cs" />
     <Compile Include="Controllers\CityController.cs" />
     <Compile Include="Controllers\ClientController.cs" />
@@ -261,14 +257,11 @@
     <Compile Include="Models\IDealerModel.cs" />
     <Compile Include="Models\SenderMail.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-<<<<<<< Updated upstream
     <Compile Include="ViewModels\BillStateviewModel.cs" />
     <Compile Include="ViewModels\BillWiewModel.cs" />
-=======
     <Compile Include="ViewModels\Report.cs" />
     <Compile Include="ViewModels\Email.cs" />
     <Compile Include="ViewModels\BasicLookup.cs" />
->>>>>>> Stashed changes
     <Compile Include="ViewModels\BranchViewModel.cs" />
     <Compile Include="ViewModels\BrandViewModel.cs" />
     <Compile Include="ViewModels\CategoryViewModel.cs" />
@@ -277,11 +270,7 @@
     <Compile Include="ViewModels\CompanyViewModel.cs" />
     <Compile Include="ViewModels\Contact.model.cs" />
     <Compile Include="ViewModels\ContactsWithTypesViewModel.cs" />
-<<<<<<< Updated upstream
     <Compile Include="ViewModels\ContactTypeViewModel.cs" />
-=======
->>>>>>> Stashed changes
-    <Compile Include="ViewModels\ContactType.cs" />
     <Compile Include="ViewModels\ContactViewModel.cs" />
     <Compile Include="ViewModels\ContractState.cs" />
     <Compile Include="ViewModels\ContractStateViewModel.cs" />
@@ -313,10 +302,7 @@
     <Compile Include="ViewModels\QuotaTypeViewModel.cs" />
     <Compile Include="ViewModels\ResponseApiViewModel.cs" />
     <Compile Include="ViewModels\RoleViewModel.cs" />
-<<<<<<< Updated upstream
-=======
     <Compile Include="ViewModels\Settings.cs" />
->>>>>>> Stashed changes
     <Compile Include="ViewModels\TaxViewModel.cs" />
     <Compile Include="ViewModels\TransactionDetailViewModel.cs" />
     <Compile Include="ViewModels\TransactionObservationViewModel.cs" />

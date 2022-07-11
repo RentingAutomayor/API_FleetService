@@ -18,6 +18,8 @@ namespace API_FleetService.ViewModels
         public Group group { get; set; }
 
         public Company company { get; set; }
+
+        public int? dealerid { get;set;}
     }
 
     public class Group

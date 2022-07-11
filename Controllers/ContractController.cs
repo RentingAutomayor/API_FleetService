@@ -64,7 +64,123 @@ namespace API_FleetService.Controllers
 								return BadRequest(ex.Message);
 						}
 				}
-				[HttpGet]
+
+
+
+
+		[HttpGet]
+		public IHttpActionResult GetinitContract()
+        {
+            try
+            {
+				using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+				{
+					var initContract = db.ContractState.Where(cst => cst.cntrst_name == "EN NEGOCIACIÓN").Select(cst => new ContractStateViewModel
+					{
+						id = cst.cntrst_id,
+						description = cst.cntrst_description,
+						name = cst.cntrst_name,
+						registrationDate = cst.cntrst_registrationDate,
+						state = cst.cntrst_state
+					}).FirstOrDefault();
+
+					return Ok(initContract);
+                }
+            }catch(Exception ex)
+            {
+				return (BadRequest(ex.Message));
+            }
+        }
+
+		[HttpGet]
+		public IHttpActionResult GetContractPending(int deal_id)
+        {
+			try
+            {
+				using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+				{
+					// trae los contratos para aprobar ingresandole el consesionario
+					var contractPending = db.Contract.Where(cp => cp.deal_id == deal_id && cp.cntr_deleteDate == null && cp.cntrst_id == 2).Select(cp => new ContractViewModel
+					{
+						id		= cp.cntr_id,
+						code	= cp.cntr_code,
+						name	= cp.cntr_name,
+						observation = cp.cntr_observation,
+						dealer = new DealerViewModel
+						{
+							id = cp.deal_id,
+							document = cp.Dealer.deal_document,
+							name = cp.Dealer.deal_name
+						},
+						client = new ClientViewModel
+						{
+							id = cp.cli_id,
+							document = cp.Client.cli_document,
+							name = cp.Client.cli_name
+						},
+						contractState = new ContractStateViewModel
+						{
+							id = cp.cntrst_id,
+							name = cp.ContractState.cntrst_name,
+							description = cp.ContractState.cntrst_description
+						},
+						discountType = new DiscountTypeViewModel
+						{
+							id = cp.dst_id,
+							name = cp.DiscountType.dst_name
+						},
+						discountValue = cp.cntr_discountValue,
+						amountOfMaintenances = cp.cntr_amountOfMaintenances,
+						amountVehicles = cp.cntr_amountVehicles,
+						startingDate = cp.cntr_startingDate,
+						endingDate = cp.cntr_endingDate,
+						duration = cp.cntr_duration,
+						registrationDate = cp.cntr_registrationDate
+
+					}).ToList();
+
+					return Ok(contractPending);
+				}
+
+			}
+			catch (Exception ex)
+			{
+				return (BadRequest(ex.Message));
+			}
+		}
+
+		[HttpPost]
+		public IHttpActionResult ChangeStateContract( ContractApprove contractApprove)
+		{
+			try
+			{
+				using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+				{
+					var updateContractDB = db.Contract.Where(ctr => ctr.cntr_id == contractApprove.contract_id).Single();
+
+                    if (contractApprove.state)
+                    {
+						updateContractDB.cntrst_id = 1;
+                    }
+                    else
+                    {
+						updateContractDB.cntrst_id = 3;
+                    }
+
+					db.SaveChanges();
+
+					return Ok("El Contrato Se a Actualizado Correctamente");
+				}
+			}
+			catch (Exception ex)
+			{
+				return (BadRequest(ex.Message));
+			}
+		}
+
+
+
+		[HttpGet]
 				public IHttpActionResult Get(int dealer_id = 0, int client_id=0)
 				{
 						try
