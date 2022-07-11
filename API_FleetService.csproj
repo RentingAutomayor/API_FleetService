@@ -271,7 +271,6 @@
     <Compile Include="ViewModels\Contact.model.cs" />
     <Compile Include="ViewModels\ContactsWithTypesViewModel.cs" />
     <Compile Include="ViewModels\ContactTypeViewModel.cs" />
-    <Compile Include="ViewModels\ContactType.cs" />
     <Compile Include="ViewModels\ContactViewModel.cs" />
     <Compile Include="ViewModels\ContractState.cs" />
     <Compile Include="ViewModels\ContractStateViewModel.cs" />

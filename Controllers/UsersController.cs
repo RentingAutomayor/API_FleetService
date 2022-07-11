@@ -133,6 +133,29 @@ namespace API_FleetService.Controllers
         }
 
         [HttpGet]
+        public IHttpActionResult GetUserByDealer(int usr_id)
+        {
+            try
+            {
+                using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+                {
+                    var lsUser = db.Users.Where(usr => usr.usr_id == usr_id).Select(usr => new UserAccessViewModel
+                    {
+                        id_user = usr.usr_id,
+                        dealerid = usr.deal_id,
+                        id_group = usr.grp_id
+                    }).FirstOrDefault();
+
+                    return Ok(lsUser);
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpGet]
         public IHttpActionResult Get()
         {
             try
