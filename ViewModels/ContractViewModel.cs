@@ -28,4 +28,10 @@ namespace API_FleetService.ViewModels
 				public List<MaintenanceItemViewModel> lsMaintenanceItems;
 				public Nullable<DateTime> registrationDate;
 		}
+
+	public class ContractApprove
+    {
+		public int contract_id;
+		public Boolean state;
+    }
 }
