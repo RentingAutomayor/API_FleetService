@@ -156,7 +156,7 @@ namespace API_FleetService.Controllers
                 usr_firstName = userViewModel.name,
                 usr_lastName = userViewModel.lastName,
                 usr_password = userViewModel.password,
-                cpn_id = userViewModel.company.id,
+                cpn_id = userViewModel.company?.id,
                 email = userViewModel.email,
                 grp_id = userViewModel.roleId,
                 user_status = userViewModel.status,
