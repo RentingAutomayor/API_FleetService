@@ -426,13 +426,15 @@ namespace API_FleetService.Controllers
                 {
                     settings.rows.ForEach(row =>
                     {
-                        var maintenance = db.MaintenanceItem.Where(item => item.mi_code == row.code).FirstOrDefault();
+                        var maintenance = db.MaintenanceItem
+                            .Where(item => item.mi_code == row.code && item.deal_id == settings.brandId)
+                            .FirstOrDefault();
                         if (maintenance is null) {
                             MaintenanceItem maintenanceItem = new MaintenanceItem();
                             maintenanceItem.mi_code = row.code;
                             maintenanceItem.mi_name = row.name;
                             maintenanceItem.mi_referencePrice = row.price;
-                            //maintenanceItem.mi_handleTax = true;
+                            maintenanceItem.deal_id = settings.brandId;
                             maintenanceItem.pu_id = (int)row.unitId;
                             maintenanceItem.tmi_id = (int)row.typeId;
                             maintenanceItem.mict_id = (int)row.categoryId;
@@ -1043,6 +1045,7 @@ namespace API_FleetService.Controllers
 
                         if (lsOldPrices.Count > 0)
                         {
+                            int index = 0;
                             foreach (var oldPrice in lsOldPrices)
                             {
                                 var newPrice = maintenanceItems.Find(mi => mi.id == oldPrice.mi_id && mi.state == true);
@@ -1053,12 +1056,26 @@ namespace API_FleetService.Controllers
                                         MaintenanceItemController.updatePriceByMaintenanceItemAndDealer((int)oldPrice.mi_id, (float)newPrice.referencePrice, dealerId);
                                     }
                                 }
+                                else
+                                {
+                                    if (index <= maintenanceItems.Count - 1) {
+                                        MaintenanceItemController
+                                        .createPriceByMaintenanceItemAndDealer((int)maintenanceItems[index].id, (float)maintenanceItems[index].referencePrice, dealerId);
+                                    }
+                                }
+                                index++;
                             }
 
                             foreach (var item in lsNewItems)
                             {
                                 MaintenanceItemController.createPriceByMaintenanceItemAndDealer((int)item.id, (float)item.referencePrice, dealerId);
                             }
+                        }else
+                        {
+                            maintenanceItems.ForEach(item =>
+                            {
+                                MaintenanceItemController.createPriceByMaintenanceItemAndDealer((int)item.id, (float)item.referencePrice, dealerId);
+                            });
                         }
                     }
 
