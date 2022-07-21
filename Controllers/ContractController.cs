@@ -274,7 +274,7 @@ namespace API_FleetService.Controllers
 																							duration = ct.cntr_duration,
 																							registrationDate = ct.cntr_registrationDate
 																					}).OrderByDescending(ct => ct.registrationDate)
-																					.ToList()
+                                                                                    .ToList()
 																					.Take(100);
 												
 										}else if (client_id > 0){
