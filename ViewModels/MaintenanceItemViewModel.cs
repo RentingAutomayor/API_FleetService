@@ -29,6 +29,7 @@ namespace API_FleetService.ViewModels
 				public DealerViewModel dealer;
 				public Nullable<DateTime> registrationDate;
 				public Nullable<DateTime> updateDate;
-				public Nullable<DateTime> deleteDate;		
+				public Nullable<DateTime> deleteDate;
+				public Nullable<float> valueDiscount;
 		}
 }
