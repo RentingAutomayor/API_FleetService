@@ -339,8 +339,6 @@ namespace API_FleetService.Controllers
 
                     var maintenanceItemsByDealer = MaintenanceItemController.getMaintenanceItems(dealer_id);
                     lsPricesByItem.lsMaintenanceItems = maintenanceItemsByDealer;
-
-
                     return Ok(lsPricesByItem);
                 }
             }
@@ -949,43 +947,63 @@ namespace API_FleetService.Controllers
                                                                        where !lsOldPrices.Any(itm => itm.mi_id == lsItems.id)
 
                                                                        select lsItems;
+                    bool isPercent = pricesByContract.contract.discountType.id == 3;
 
-                    if (lsOldPrices.Count > 0)
+                    pricesByContract.lsMaintenanceItems.ForEach(item =>
                     {
-                        foreach (var oldPrice in lsOldPrices)
-                        {
-                            var newPrice = pricesByContract.lsMaintenanceItems.Find(it => it.id == oldPrice.mi_id);
-
-                            if (oldPrice.mi_referencePrice != newPrice.referencePrice)
-                            {
-                                transactionType = "UPDATE";
-                                PricesByContract priceByContract = db.PricesByContract.Where(pbc => pbc.pbc_id == oldPrice.pbc_id).FirstOrDefault();
-                                this.setDataPricesByContract(contract_id, (int)oldPrice.mi_id, (float)newPrice.referencePrice, transactionType, ref priceByContract);
-                                db.SaveChanges();
-                            }
-
-                            foreach (var item in lsNewItems)
-                            {
-                                PricesByContract priceByContract = new PricesByContract();
-                                this.setDataPricesByContract((int)pricesByContract.contract.id, (int)item.id, (float)item.referencePrice, "INSERT", ref priceByContract);
-                                db.PricesByContract.Add(priceByContract);
-                                db.SaveChanges();
-                            }
-                        }
-
-                    }
-                    else
-                    {
-                        transactionType = "INSERT";
-                        foreach (var item in pricesByContract.lsMaintenanceItems)
+                        var maintenceItem = db.PricesByContract
+                            .Where(p => p.mi_id == item.id && p.cntr_id == contract_id).FirstOrDefault();
+                        float valueDiscount = (float)(item.valueDiscount is null ? 0 : item.valueDiscount);
+                        if(maintenceItem is null)
                         {
                             PricesByContract priceByContract = new PricesByContract();
-                            this.setDataPricesByContract(contract_id, (int)item.id, (float)item.referencePrice, transactionType, ref priceByContract);
+                            this.setDataPricesByContract(contract_id, (int)item.id, (float)item.referencePrice, "INSERT", ref priceByContract, valueDiscount, isPercent);
                             db.PricesByContract.Add(priceByContract);
                             db.SaveChanges();
                         }
+                        else
+                        {
+                            PricesByContract priceByContract = db.PricesByContract.Where(pbc => pbc.pbc_id == maintenceItem.pbc_id).FirstOrDefault();
+                            this.setDataPricesByContract(contract_id, (int)item.id, (float)item.referencePrice, transactionType, ref priceByContract, valueDiscount, isPercent);
+                            db.SaveChanges();
+                        }
+                    });
 
-                    }
+                    //if (lsOldPrices.Count > 0)
+                    //{
+                    //    foreach (var oldPrice in lsOldPrices)
+                    //    {
+                    //        var newPrice = pricesByContract.lsMaintenanceItems.Find(it => it.id == oldPrice.mi_id);
+                    //        if (oldPrice.mi_referencePrice != newPrice.referencePrice)
+                    //        {
+                    //            transactionType = "UPDATE";
+                    //            PricesByContract priceByContract = db.PricesByContract.Where(pbc => pbc.pbc_id == oldPrice.pbc_id).FirstOrDefault();
+                    //            this.setDataPricesByContract(contract_id, (int)oldPrice.mi_id, (float)newPrice.referencePrice, transactionType, ref priceByContract, (float)newPrice.valueDiscount, isPercent);
+                    //            db.SaveChanges();
+                    //        }
+
+                    //        foreach (var item in lsNewItems)
+                    //        {
+                    //            PricesByContract priceByContract = new PricesByContract();
+                    //            this.setDataPricesByContract((int)pricesByContract.contract.id, (int)item.id, (float)item.referencePrice, "INSERT", ref priceByContract);
+                    //            db.PricesByContract.Add(priceByContract);
+                    //            db.SaveChanges();
+                    //        }
+                    //    }
+
+                    //}
+                    //else
+                    //{
+                    //    transactionType = "INSERT";
+                    //    foreach (var item in pricesByContract.lsMaintenanceItems)
+                    //    {
+                    //        PricesByContract priceByContract = new PricesByContract();
+                    //        this.setDataPricesByContract(contract_id, (int)item.id, (float)item.referencePrice, transactionType, ref priceByContract, (float)item.valueDiscount, isPercent);
+                    //        db.PricesByContract.Add(priceByContract);
+                    //        db.SaveChanges();
+                    //    }
+
+                    //}
 
                     rta.response = true;
                     rta.message = "Se han asignado los precios del contrato: " + pricesByContract.contract.code;
@@ -998,12 +1016,14 @@ namespace API_FleetService.Controllers
             }
         }
 
-        private void setDataPricesByContract(int contract_id, int maintenanceItem_id, float referencePrice, string transacctionType, ref PricesByContract priceByContract)
+        private void setDataPricesByContract(int contract_id, int maintenanceItem_id, float referencePrice, string transacctionType, ref PricesByContract priceByContract, float valueDiscount = 0, bool isPercent = false)
         {
 
             priceByContract.cntr_id = contract_id;
             priceByContract.mi_id = maintenanceItem_id;
             priceByContract.mi_referencePrice = referencePrice;
+            priceByContract.isPercent = isPercent;
+            priceByContract.discountValue = (int)valueDiscount;
 
             if (transacctionType == "INSERT")
             {
@@ -1274,9 +1294,9 @@ namespace API_FleetService.Controllers
 
                         var pricesConfigurated = db.PricesByContract
                             .Where(ct => ct.cntr_id == contractId)
-                            .Select(pbc => new { pbc.mi_id, pbc.mi_referencePrice })
+                            .Select(pbc => new { pbc.mi_id, pbc.mi_referencePrice, pbc.discountValue })
                             .AsEnumerable()
-                            .Select(c => (itemId: c.mi_id, itemPrice: c.mi_referencePrice))
+                            .Select(c => (itemId: c.mi_id, itemPrice: c.mi_referencePrice, discountValue: c.discountValue))
                             .ToList();
 
                         foreach (var priceByItem in pricesConfigurated)
@@ -1285,6 +1305,7 @@ namespace API_FleetService.Controllers
                             if (maintenanceItem != null)
                             {
                                 maintenanceItem.referencePrice = priceByItem.itemPrice;
+                                maintenanceItem.valueDiscount = priceByItem.discountValue;
                                 maintenanceItemsConfigurated.Add(maintenanceItem);
                             }
 
