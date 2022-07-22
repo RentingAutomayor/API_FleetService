@@ -120,8 +120,7 @@ namespace API_FleetService.Controllers
 																trxDetail.trx_relation_id = (transaction.headerDetails.relatedTransaction != null) ? transaction.headerDetails.relatedTransaction.id : null;
 																if (transaction.headerDetails.vehicle != null)
 																{
-																		VehicleController vehController = new VehicleController();
-																		vehController.Update(transaction.headerDetails.vehicle);
+																		VehicleController.UpdateVehicle(transaction.headerDetails.vehicle);
 																}
 																trxDetail.veh_id = (transaction.headerDetails.vehicle != null) ? transaction.headerDetails.vehicle.id : null;
 																trxDetail.deal_id = (transaction.headerDetails.dealer != null) ? transaction.headerDetails.dealer.id : null;
@@ -133,6 +132,7 @@ namespace API_FleetService.Controllers
 																{
 																		var trxRelated = db.transactions.Where(tr => tr.trx_id == trxDetail.trx_relation_id).FirstOrDefault();
 																		trxRelated.trxst_id = (int)EnumTransactionState.APROBADA;
+																		trxRelated.trx_updateDate = DateTime.Now;
 																		var trxRelatedDetail = db.transactionDetail.Where(trx => trx.trx_id == trxDetail.trx_relation_id).FirstOrDefault();
 																		trxRelatedDetail.usu_approbation = transaction.usu_id;
 																		trxRelatedDetail.trx_approbationDate = DateTime.Now;
@@ -142,6 +142,7 @@ namespace API_FleetService.Controllers
 																{
 																		var trxRelated = db.transactions.Where(tr => tr.trx_id == trxDetail.trx_relation_id).FirstOrDefault();
 																		trxRelated.trxst_id = (int)EnumTransactionState.RECHAZADA;
+																		trxRelated.trx_updateDate = DateTime.Now;
 																		var trxRelatedDetail = db.transactionDetail.Where(trx => trx.trx_id == trxDetail.trx_relation_id).FirstOrDefault();
 																		trxRelatedDetail.usu_reject = transaction.usu_id;
 																		trxRelatedDetail.trx_rejectDate = DateTime.Now;
@@ -152,6 +153,7 @@ namespace API_FleetService.Controllers
 																{
 																		var trxRelated = db.transactions.Where(tr => tr.trx_id == trxDetail.trx_relation_id).FirstOrDefault();
 																		trxRelated.trxst_id = (int)EnumTransactionState.FINALIZADA;
+																		trxRelated.trx_updateDate = DateTime.Now;
 																		var trxRelatedDetail = db.transactionDetail.Where(trx => trx.trx_id == trxDetail.trx_relation_id).FirstOrDefault();
 																		trxRelatedDetail.usu_ending = transaction.usu_id;
 																		trxRelatedDetail.trx_endingDate = DateTime.Now;
@@ -162,14 +164,11 @@ namespace API_FleetService.Controllers
 																{
 																		var trxRelated = db.transactions.Where(tr => tr.trx_id == trxDetail.trx_relation_id).FirstOrDefault();
 																		trxRelated.trxst_id = (int)EnumTransactionState.ANULADA;
+																		trxRelated.trx_updateDate = DateTime.Now;
 																		var trxRelatedDetail = db.transactionDetail.Where(trx => trx.trx_id == trxDetail.trx_relation_id).FirstOrDefault();
 																		trxRelatedDetail.usu_anulation = transaction.usu_id;
 																		trxRelatedDetail.trx_anulationDate = DateTime.Now;
 																}
-
-
-
-
 
 																db.transactionDetail.Add(trxDetail);
 																db.SaveChanges();
@@ -304,7 +303,7 @@ namespace API_FleetService.Controllers
 										code = (code != "" && code != "null" && code != null) ? code : null;
 										license_plate = (license_plate != "" && license_plate != "null" && license_plate != null) ? license_plate : null;
 
-										var lsTransactionByDealer = db.STRPRC_GET_TRANSACTIONS_BY_CLIENT_OR_DEALER(
+										var lsTransactionByDealer = db.STRPRC_GET_TRANSACTIONS_BY_CLIENT_OR_DEALER1(
 														dealer_id,
 														client_id,
 														init_date,
@@ -330,6 +329,8 @@ namespace API_FleetService.Controllers
 												}
 												
 												transaction.registrationDate = trx.trx_registrationDate;
+												transaction.updateDate = trx.trx_updateDate;
+												
 
 												transaction.client = new ClientViewModel();
 												transaction.client.id = trx.cli_id;
@@ -353,6 +354,7 @@ namespace API_FleetService.Controllers
 												transaction.headerDetails.branch = new BranchViewModel();
 												transaction.headerDetails.branch.id = trx.bra_id;
 												transaction.headerDetails.branch.name = trx.bra_name;
+
 
 												lsTransactions.Add(transaction);
 										}
@@ -653,7 +655,9 @@ namespace API_FleetService.Controllers
 																														id_user = trx.usr_id,
 																														name = trx.Users.usr_firstName,
 																														lastName = trx.Users.usr_lastName
-																												}
+																												},
+																												movementDescription = trx.transactions.Movement.m_name
+																							
 																										}).OrderBy(trx => trx.registrationDate)
 																										.ToList();
 								return lsObservations;

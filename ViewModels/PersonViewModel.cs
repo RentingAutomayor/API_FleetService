@@ -17,5 +17,7 @@ namespace API_FleetService.ViewModels
 				public string website;
 				public Nullable<bool> state;
 				public Nullable<DateTime> registrationDate;
+				public Nullable<DateTime> updateDate;
+				public Nullable<DateTime> deleteDate;
 		}
 }

@@ -9,5 +9,6 @@ namespace API_FleetService.ViewModels
 		{
 				public bool response;
 				public string message;
+				public string Message;
 		}
 }

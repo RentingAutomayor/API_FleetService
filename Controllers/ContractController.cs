@@ -64,7 +64,123 @@ namespace API_FleetService.Controllers
 								return BadRequest(ex.Message);
 						}
 				}
-				[HttpGet]
+
+
+
+
+		[HttpGet]
+		public IHttpActionResult GetinitContract()
+        {
+            try
+            {
+				using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+				{
+					var initContract = db.ContractState.Where(cst => cst.cntrst_name == "EN NEGOCIACIÓN").Select(cst => new ContractStateViewModel
+					{
+						id = cst.cntrst_id,
+						description = cst.cntrst_description,
+						name = cst.cntrst_name,
+						registrationDate = cst.cntrst_registrationDate,
+						state = cst.cntrst_state
+					}).FirstOrDefault();
+
+					return Ok(initContract);
+                }
+            }catch(Exception ex)
+            {
+				return (BadRequest(ex.Message));
+            }
+        }
+
+		[HttpGet]
+		public IHttpActionResult GetContractPending(int deal_id)
+        {
+			try
+            {
+				using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+				{
+					// trae los contratos para aprobar ingresandole el consesionario
+					var contractPending = db.Contract.Where(cp => cp.deal_id == deal_id && cp.cntr_deleteDate == null && cp.cntrst_id == 2).Select(cp => new ContractViewModel
+					{
+						id		= cp.cntr_id,
+						code	= cp.cntr_code,
+						name	= cp.cntr_name,
+						observation = cp.cntr_observation,
+						dealer = new DealerViewModel
+						{
+							id = cp.deal_id,
+							document = cp.Dealer.deal_document,
+							name = cp.Dealer.deal_name
+						},
+						client = new ClientViewModel
+						{
+							id = cp.cli_id,
+							document = cp.Client.cli_document,
+							name = cp.Client.cli_name
+						},
+						contractState = new ContractStateViewModel
+						{
+							id = cp.cntrst_id,
+							name = cp.ContractState.cntrst_name,
+							description = cp.ContractState.cntrst_description
+						},
+						discountType = new DiscountTypeViewModel
+						{
+							id = cp.dst_id,
+							name = cp.DiscountType.dst_name
+						},
+						discountValue = cp.cntr_discountValue,
+						amountOfMaintenances = cp.cntr_amountOfMaintenances,
+						amountVehicles = cp.cntr_amountVehicles,
+						startingDate = cp.cntr_startingDate,
+						endingDate = cp.cntr_endingDate,
+						duration = cp.cntr_duration,
+						registrationDate = cp.cntr_registrationDate
+
+					}).ToList();
+
+					return Ok(contractPending);
+				}
+
+			}
+			catch (Exception ex)
+			{
+				return (BadRequest(ex.Message));
+			}
+		}
+
+		[HttpPost]
+		public IHttpActionResult ChangeStateContract( ContractApprove contractApprove)
+		{
+			try
+			{
+				using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+				{
+					var updateContractDB = db.Contract.Where(ctr => ctr.cntr_id == contractApprove.contract_id).Single();
+
+                    if (contractApprove.state)
+                    {
+						updateContractDB.cntrst_id = 1;
+                    }
+                    else
+                    {
+						updateContractDB.cntrst_id = 3;
+                    }
+
+					db.SaveChanges();
+
+					return Ok("El Contrato Se a Actualizado Correctamente");
+				}
+			}
+			catch (Exception ex)
+			{
+				return (BadRequest(ex.Message));
+			}
+		}
+
+
+
+		[HttpGet]
 				public IHttpActionResult Get(int dealer_id = 0, int client_id=0)
 				{
 						try
@@ -158,7 +274,7 @@ namespace API_FleetService.Controllers
 																							duration = ct.cntr_duration,
 																							registrationDate = ct.cntr_registrationDate
 																					}).OrderByDescending(ct => ct.registrationDate)
-																					.ToList()
+                                                                                    .ToList()
 																					.Take(100);
 												
 										}else if (client_id > 0){
@@ -224,59 +340,41 @@ namespace API_FleetService.Controllers
 				{
 						try
 						{
-								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
-								{
-										var oContract = db.Contract.Where(ct => ct.cntr_state == true && ct.cntr_id == pContract_id)
-																				.Select(ct => new ContractViewModel
-																				{
-																						id = ct.cntr_id,
-																						consecutive = ct.cntr_consecutive,
-																						code = ct.cntr_code,
-																						name = ct.cntr_name,
-																						observation = ct.cntr_observation,
-																						dealer = new DealerViewModel
-																						{
-																								id = ct.deal_id,
-																								document = ct.Dealer.deal_document,
-																								name = ct.Dealer.deal_name
-																						},
-																						client = new ClientViewModel
-																						{
-																								id = ct.cli_id,
-																								document = ct.Client.cli_document,
-																								name = ct.Client.cli_name
-																						},
-																						contractState = new ContractStateViewModel
-																						{
-																								id = ct.cntrst_id,
-																								name = ct.ContractState.cntrst_name,
-																								description = ct.ContractState.cntrst_description
-																						},
-																						discountType = new DiscountTypeViewModel
-																						{
-																								id = ct.dst_id,
-																								name = ct.DiscountType.dst_name
-																						},
-																						discountValue = ct.cntr_discountValue,
-																						amountOfMaintenances = ct.cntr_amountOfMaintenances,
-																						amountVehicles = ct.cntr_amountVehicles,
-																						startingDate = ct.cntr_startingDate,
-																						endingDate = ct.cntr_endingDate,
-																						duration = ct.cntr_duration,
-																						registrationDate = ct.cntr_registrationDate
-																				}).FirstOrDefault();
-
-										oContract.lsVehicleModels = this.getLisVehicleModelsByContrat((int)oContract.id);
-										oContract.lsVehicles = this.getLisVehiclesByContrat((int)oContract.id);
-
-										return Ok(oContract);
-								}
-
+								var contract = ContractController.getContractById(pContract_id);
+								return Ok(contract);
 						}
 						catch (Exception ex)
 						{
 								return BadRequest(ex.Message);
 						}
+				}
+
+				public static ContractViewModel getContractById(int contractId) {
+						try
+						{
+								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+								{
+										var contractDB = db.Contract.Where(ct => ct.cntr_state == true && ct.cntr_id == contractId).FirstOrDefault();
+
+										if (contractDB != null)
+										{
+												var contract = ContractController.formatData(contractDB);
+												contract.lsVehicleModels = ContractController.getLisVehicleModelsByContrat(contractId);
+												contract.lsVehicles = ContractController.getLisVehiclesByContrat(contractId);
+												return contract;
+										}
+										else {
+												return null;
+										}
+									
+								}
+
+						}
+						catch (Exception ex)
+						{
+								throw ex;
+						}
+
 				}
 
 
@@ -395,6 +493,48 @@ namespace API_FleetService.Controllers
 						{
 								return BadRequest(ex.Message);
 						}
+				}
+
+				private static ContractViewModel formatData(Contract contractDB) {
+						var contract = new ContractViewModel
+						{
+								id = contractDB.cntr_id,
+								consecutive = contractDB.cntr_consecutive,
+								code = contractDB.cntr_code,
+								name = contractDB.cntr_name,
+								observation = contractDB.cntr_observation,
+								dealer = new DealerViewModel
+								{
+										id = contractDB.deal_id,
+										document = contractDB.Dealer.deal_document,
+										name = contractDB.Dealer.deal_name
+								},
+								client = new ClientViewModel
+								{
+										id = contractDB.cli_id,
+										document = contractDB.Client.cli_document,
+										name = contractDB.Client.cli_name
+								},
+								contractState = new ContractStateViewModel
+								{
+										id = contractDB.cntrst_id,
+										name = contractDB.ContractState.cntrst_name,
+										description = contractDB.ContractState.cntrst_description
+								},
+								discountType = new DiscountTypeViewModel
+								{
+										id = contractDB.dst_id,
+										name = contractDB.DiscountType.dst_name
+								},
+								discountValue = contractDB.cntr_discountValue,
+								amountOfMaintenances = contractDB.cntr_amountOfMaintenances,
+								amountVehicles = contractDB.cntr_amountVehicles,
+								startingDate = contractDB.cntr_startingDate,
+								endingDate = contractDB.cntr_endingDate,
+								duration = contractDB.cntr_duration,
+								registrationDate = contractDB.cntr_registrationDate,
+						};
+						return contract;
 				}
 
 
@@ -551,7 +691,7 @@ namespace API_FleetService.Controllers
 
 				}
 
-				private List<VehicleModelViewModel> getLisVehicleModelsByContrat(int contract_id)
+				private static List<VehicleModelViewModel> getLisVehicleModelsByContrat(int contract_id)
 				{
 						try
 						{
@@ -587,7 +727,7 @@ namespace API_FleetService.Controllers
 
 				}
 
-				private List<VehicleViewModel> getLisVehiclesByContrat(int contract_id)
+				private static List<VehicleViewModel> getLisVehiclesByContrat(int contract_id)
 				{
 						try
 						{
@@ -680,8 +820,8 @@ namespace API_FleetService.Controllers
 																						registrationDate = ct.cntr_registrationDate
 																				}).OrderByDescending(ct => ct.registrationDate).FirstOrDefault();
 
-										oContract.lsVehicleModels = this.getLisVehicleModelsByContrat((int)oContract.id);
-										oContract.lsVehicles = this.getLisVehiclesByContrat((int)oContract.id);
+										oContract.lsVehicleModels = ContractController.getLisVehicleModelsByContrat((int)oContract.id);
+										oContract.lsVehicles = ContractController.getLisVehiclesByContrat((int)oContract.id);
 
 										return Ok(oContract);
 								}
@@ -741,6 +881,9 @@ namespace API_FleetService.Controllers
 																			registrationDate = ct.cntr_registrationDate
 																	}).OrderByDescending(ctr => ctr.registrationDate)
 																	.FirstOrDefault();
+
+										var contractualInfo = ContractualInformationController.getContractualInformationByClient((int)contract.client.id);									
+										contract.client.contractualInformation = (contractualInfo != null) ? contractualInfo : null;
 
 										return Ok(contract);
 								}

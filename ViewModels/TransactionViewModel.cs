@@ -27,6 +27,6 @@ namespace API_FleetService.ViewModels
 				public Nullable<bool> state;
 				public Nullable<DateTime> registrationDate;
 				public Nullable<DateTime> updateDate;
-
+				public BillWiewModel bill { get; set; }
 		}
 }

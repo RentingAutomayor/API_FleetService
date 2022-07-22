@@ -3,74 +3,31 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using DAO_FleetService;
+using API_FleetService.Models;
 
 namespace API_FleetService.ViewModels
 {
-		public class DealerViewModel : PersonViewModel
+		public class DealerViewModel : IPersonModel, IBussinessObject
 		{
-				public static Dealer PrepareDealerToInsertDB(DealerViewModel pDealer) {
-						
-						if (DealerViewModel.dealerExistInDB(pDealer.document)) {
-								throw new Exception("El concesionario que intenta ingresar ya se encuentra almacenado en la base de datos");
-						}
-						Dealer oDealerDB = DealerViewModel.setDataToDealer(pDealer);
-						return oDealerDB;
-				}
+				public int? id { get; set; }
+				public string document { get; set; }
+				public string name { get; set; }
+				public string lastname { get; set; }
+				public string phone { get; set; }
+				public string cellphone { get; set; }
+				public string address { get; set; }
+				public string website { get; set; }
+				public bool? state { get; set; }
+				public DateTime? registrationDate { get; set; }
+				public DateTime? updateDate { get; set; }
+				public DateTime? deleteDate { get; set; }
+				bool IBussinessObject.state { get; set; }
 
-				private static bool dealerExistInDB(string pDealer_document)
-				{
-						try
-						{
-								bool rta = false;
-								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
-								{
-										var dealerDB = db.Dealer.Where(dlr => dlr.deal_document == pDealer_document).FirstOrDefault();
-										if (dealerDB != null)
-										{
-												rta = true;
-										}
-										return rta;
-								}
-						}
-						catch (Exception ex)
-						{
-								return false;
-						}
-				}
+				public List<ContactViewModel> contacts;
 
-				public static Dealer setDataToDealer(DealerViewModel pDealer) {
-						if (pDealer.document.Trim() == "")
-						{
-								throw new Exception("El NIT del concesionario es obligatorio");
-						}
+				public List<BranchViewModel> branches;
 
-						if (pDealer.name.Trim() == "")
-						{
-								throw new Exception("El nombre del concesionario no puede ir vacío");
-						}
+				public List<MaintenanceItemViewModel> maintenanceItems;
 
-						Dealer oDealerDB = new Dealer();
-						oDealerDB.deal_document = pDealer.document;
-						oDealerDB.deal_name = pDealer.name;
-						oDealerDB.deal_state = true;
-						oDealerDB.deal_registrationDate = DateTime.Now;
-						return oDealerDB;
-				}
-
-				public static bool InsertIntoDB(Dealer pDealer) {
-						try
-						{
-								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
-								{
-										db.Dealer.Add(pDealer);
-										db.SaveChanges();
-										return true;
-								}
-						}
-						catch (Exception ex)
-						{
-								return false;
-						}
-				}
 		}
 }

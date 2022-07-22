@@ -9,1010 +9,1325 @@ using DAO_FleetService;
 
 namespace API_FleetService.Controllers
 {
-		public class MaintenanceItemController : ApiController
-		{
-				[HttpGet]
-				public IHttpActionResult GetPresentationUnits()
-				{
+    public class MaintenanceItemController : ApiController
+    {
+        [HttpGet]
+        public IHttpActionResult GetPresentationUnits()
+        {
+            try
+            {
+                using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+                {
+                    var lsPresentationUnits = db.PresentationUnit
+                        .Where(pu => pu.pu_state == true)
+                        .Select(pu => new PresentationUnitViewModel
+                        {
+                            id = pu.pu_id,
+                            shortName = pu.pu_shortName,
+                            longName = pu.pu_longName
+                        }).ToList();
+
+                    return Ok(lsPresentationUnits);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpGet]
+        public IHttpActionResult GetCategories()
+        {
+            try
+            {
+                using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+                {
+                    var lsCategories = db.MaintenanceItemCategory
+                        .Where(ct => ct.mict_state == true)
+                        .Select(ct => new CategoryViewModel
+                        {
+                            id = ct.mict_id,
+                            name = ct.mict_name,
+                            sate = ct.mict_state,
+                            registrationDate = ct.mict_registrationDate
+                        }).ToList();
+
+                    return Ok(lsCategories);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpGet]
+        public IHttpActionResult GetTypeOfMaintenanceItem()
+        {
+            try
+            {
+                using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+                {
+                    var lsType = db.TypeOfMaintenanceItem
+                        .Where(tp => tp.tmi_state == true)
+                        .Select(tp => new TypeOfMaintenanceItemViewModel
+                        {
+                            id = tp.tmi_id,
+                            name = tp.tmi_name,
+                        }).ToList();
+                    return Ok(lsType);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpGet]
+        public IHttpActionResult Get(int dealer_id)
+        {
+            try
+            {
+                using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+                {
+                    var lsMaintenanceItems = MaintenanceItemController.getMaintenanceItems(dealer_id);
+                    return Ok(lsMaintenanceItems);
+                }
+            }
+            catch (Exception ex)
+            {
+
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpPost]
+        public IHttpActionResult Insert(MaintenanceItemViewModel item)
+        {
+            try
+            {
+                using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+                {
+                    ResponseApiViewModel rta = new ResponseApiViewModel();
+
+                    var itemExists = MaintenanceItemController.isItemHostedIntoDb(item.code);
+
+                    if (itemExists)
+                    {
+                        throw new Exception("No se puede guardar el item de mantenimiento puesto que el código: " + item.code + " Ya se encuentra almacenado en la base de datos");
+                    }
+
+                    if (MaintenanceItemController.validateDataMaintenanceItem(item))
+                    {
+                        MaintenanceItem itemDB = new MaintenanceItem();
+                        MaintenanceItemController.setDataToItemDB(item, ref itemDB, true);
+
+                        if (MaintenanceItemController.InsertIntoDB(itemDB))
+                        {
+                            var itemIserted = MaintenanceItemController.getLastMaintenanceItemInserted();
+
+                            MaintenanceItemController.configureItemByVehicleTypeAndVehicleModel(itemIserted.mi_id, item);                           
+
+                            if (item.handleTax == true)
+                            {
+                                MaintenanceItemController.configureTaxesByItemId(itemIserted.mi_id, item.lsTaxes, true);
+                            }                         
+                        }                     
+                    }
+                    rta.response = true;
+                    rta.message = "El artículo de mantenimiento " + item.code + " fue almacenado correctamente en la base de datos";
+                    return Ok(rta);
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+
+        [HttpPut]
+        public IHttpActionResult Update(MaintenanceItemViewModel item)
+        {
+            try
+            {
+                using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+                {
+                    ResponseApiViewModel rta = new ResponseApiViewModel();
+                    if (MaintenanceItemController.validateDataMaintenanceItem(item)) {
+                        var itemDB = db.MaintenanceItem.Where(it => it.mi_id == item.id).FirstOrDefault();
+                        MaintenanceItemController.setDataToItemDB(item, ref itemDB, false);
+                        db.SaveChanges();
+                        MaintenanceItemController.configureItemByVehicleTypeAndVehicleModel(itemDB.mi_id, item);
+
+                        if (item.handleTax == true)
+                        {
+                            MaintenanceItemController.configureTaxesByItemId(itemDB.mi_id, item.lsTaxes, false);
+                        }
+                    }              
+                   
+                    rta.response = true;
+                    rta.message = "Se ha actualizado el artículo de mantenimiento: " + item.name + " de la base de datos";
+                    return Ok(rta);
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpDelete]
+        public IHttpActionResult Delete(int maintenanceItemId)
+        {
+            try
+            {
+                using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+                {
+                    ResponseApiViewModel rta = new ResponseApiViewModel();
+                    var oItemDB = db.MaintenanceItem.Where(it => it.mi_id == maintenanceItemId).FirstOrDefault();
+                    oItemDB.mi_state = false;
+                    oItemDB.mi_deleteDate = DateTime.Now;
+                    db.SaveChanges();
+                    MaintenanceItemController.DeleteMaintenanceItemOfVehicleTypesAndModels(maintenanceItemId);
+                    rta.response = true;
+                    rta.message = "Se ha eliminado el artículo de mantenimiento de la base de datos";
+                    return Ok(rta);
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+
+        [HttpGet]
+        public IHttpActionResult GetById(int itemId)
+        {
+            try
+            {          
+                var maintenanceItem = MaintenanceItemController.getMaintenanceItemById(itemId);
+                return Ok(maintenanceItem);               
+            }
+            catch (Exception ex)
+            {
+
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpGet]
+        public IHttpActionResult GetByTypeId(int typeId)
+        {
+            try
+            {
+                var maintenanceItem = MaintenanceItemController.getMaintenanceItemByTypeId(typeId);
+                return Ok(maintenanceItem);
+            }
+            catch (Exception ex)
+            {
+
+                return BadRequest(ex.Message);
+            }
+        }
+
+
+        [HttpGet]
+        public IHttpActionResult GetItemsByVehicleModel(int vehicleModel_id = 0)
+        {
+            try
+            {
+                using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+                {
+
+                    var oVehicleModel = db.VehicleModel.Where(vm => vm.vm_id == vehicleModel_id)
+                        .Select(vm => new VehicleModelViewModel
+                        {
+                            id = vm.vm_id,
+                            shortName = vm.vm_shortName,
+                            longName = vm.vm_longName,
+                            state = vm.vm_state,
+                            registrationDate = vm.vm_registrationDate,
+                            brand = new BrandViewModel { id = vm.vb_id, name = vm.VehicleBrand.vb_name },
+                            type = new VehicleTypeViewModel { id = vm.vt_id, name = vm.VehicleType.vt_name }
+                        }).FirstOrDefault();
+
+                    var lsItemsConfiguratedByVehicleModel = db.MaintenanceItemsByVehicleModels
+                        .Where(vm => vm.vm_id == vehicleModel_id && vm.MaintenanceItem.mi_state == true)
+                        .ToList();
+
+                    var lsItemsConfiguratedByVehicleType = db.MaintenanceItemsByVehicleTypes
+                        .Where(vt => vt.vt_id == oVehicleModel.type.id && vt.MaintenanceItem.mi_state == true)
+                        .ToList();
+
+
+
+                    var lsItemConfigurated = new List<int>();
+
+                    foreach (var item in lsItemsConfiguratedByVehicleType)
+                    {
+                        lsItemConfigurated.Add((int)item.mi_id);
+                    }
+
+                    foreach (var item in lsItemsConfiguratedByVehicleModel)
+                    {
+                        lsItemConfigurated.Add((int)item.mi_id);
+                    }
+
+                    var lsMaintenanceItems = db.MaintenanceItem
+                        .Where(mi => mi.mi_state == true && lsItemConfigurated.Any(item => item == mi.mi_id) && (mi.deal_id == null))
+                        .ToList();
+
+                    var lsMaintenanceItemsFormated = new List<MaintenanceItemViewModel>();
+
+										foreach (var item in lsMaintenanceItems)
+										{
+                        var maintenanceItem = MaintenanceItemController.formatData(item);
+                        if (maintenanceItem != null) {
+                            lsMaintenanceItemsFormated.Add(maintenanceItem);
+                        }                       
+                    }
+
+                    foreach (var maintenanceItem in lsMaintenanceItemsFormated)
+                    {
+                        if (maintenanceItem.handleTax == true)
+                        {
+                            var lsTaxes = MaintenanceItemController.getTaxesByItemId((int)maintenanceItem.id);
+
+                            if (lsTaxes != null)
+                            {
+                                maintenanceItem.lsTaxes = lsTaxes;
+                            }
+                        }
+
+                    }
+
+                    return Ok(lsMaintenanceItemsFormated);
+                }
+
+            }
+            catch (Exception ex)
+            {
+
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpGet]
+        public IHttpActionResult GetPricesByDealer(int dealer_id)
+        {
+            try
+            {
+                using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+                {
+                    PricesByDealerViewModel lsPricesByItem = new PricesByDealerViewModel();
+
+
+                    lsPricesByItem.dealer = db.Dealer
+                                    .Where(deal => deal.deal_id == dealer_id)
+                                    .Select(deal => new DealerViewModel
+                                    {
+                                        id = deal.deal_id,
+                                        name = deal.deal_name
+                                    }).FirstOrDefault();
+
+                    var maintenanceItemsByDealer = MaintenanceItemController.getMaintenanceItems(dealer_id);
+                    lsPricesByItem.lsMaintenanceItems = maintenanceItemsByDealer;
+                    return Ok(lsPricesByItem);
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpPost]
+        public IHttpActionResult SetPricesByDealer(PricesByDealerViewModel pricesByDealer)
+        {
+            try
+            {
+                using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+                {
+                    ResponseApiViewModel rta = new ResponseApiViewModel();
+                    MaintenanceItemController.configurePricesByMaintenanceItemAndDealer((int)pricesByDealer.dealer.id, pricesByDealer.lsMaintenanceItems, false);
+                    rta.response = true;
+                    rta.message = "Se han asociado de manera correcta los precios para el concesionario: " + pricesByDealer.dealer.name;
+
+                    return Ok(rta);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpGet]
+        public IHttpActionResult GetPricesByContract(int contract_id)
+        {
+            try
+            {
+                using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+                {
+                    var pricesByContract = MaintenanceItemController.getPricesByContractId(contract_id);
+                    return Ok(pricesByContract);
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpGet]
+        public IHttpActionResult GetTaxesList()
+        {
+
+            try
+            {
+                using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+                {
+                    var lsTaxes = db.Taxes
+                        .Where(tx => tx.tax_state == true)
+                        .Select(tx => new TaxViewModel
+                        {
+                            id = tx.tax_id,
+                            name = tx.tax_name,
+                            description = tx.tax_desccription,
+                            percentValue = tx.tax_percentValue,
+                            registrationDate = tx.tax_registrationDate
+                        }).ToList();
+
+                    return Ok(lsTaxes);
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpPost]
+        public IHttpActionResult Update(SettingsViewModel settings)
+        {
+            try
+            {
+                using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+                {
+                    settings.rows.ForEach(row =>
+                    {
+                        var maintenance = db.MaintenanceItem
+                            .Where(item => item.mi_code == row.code && item.deal_id == settings.brandId)
+                            .FirstOrDefault();
+                        if (maintenance is null) {
+                            MaintenanceItem maintenanceItem = new MaintenanceItem();
+                            maintenanceItem.mi_code = row.code;
+                            maintenanceItem.mi_name = row.name;
+                            maintenanceItem.mi_referencePrice = row.price;
+                            maintenanceItem.deal_id = settings.brandId;
+                            maintenanceItem.pu_id = (int)row.unitId;
+                            maintenanceItem.tmi_id = (int)row.typeId;
+                            maintenanceItem.mict_id = (int)row.categoryId;
+                            maintenanceItem.mi_state = true;
+                            db.MaintenanceItem.Add(maintenanceItem);
+                        }
+                        else
+                        {
+                            maintenance.mi_referencePrice = row.price;
+                            maintenance.mict_id = (int)row.categoryId;
+                            maintenance.pu_id = (int)row.unitId;
+                            maintenance.mict_id = (int)row.categoryId;
+                            maintenance.mi_name = row.name;
+                        }
+                        db.SaveChanges();
+                    });
+                }
+                    return Ok();
+            }catch(Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+        }
+
+
+        private static MaintenanceItemViewModel formatData(MaintenanceItem itemDB) {
+						try
+						{
+                var maintenanceItem = new MaintenanceItemViewModel
+                {
+                    id = itemDB.mi_id,
+                    code = itemDB.mi_code,
+                    name = itemDB.mi_name,
+                    description = itemDB.mi_description,
+                    type = new TypeOfMaintenanceItemViewModel
+                    {
+                        id = itemDB.tmi_id,
+                        name = itemDB.TypeOfMaintenanceItem.tmi_name
+                    },
+                    presentationUnit = 
+                    (itemDB.PresentationUnit != null)
+                    ? 
+                        new PresentationUnitViewModel
+                        {
+                            id = itemDB.pu_id,
+                            shortName = itemDB.PresentationUnit.pu_shortName,
+                            longName = itemDB.PresentationUnit.pu_longName
+                        } 
+                    :  null,
+                    category = (itemDB.mict_id != null) 
+                    ? 
+                    new CategoryViewModel
+                        {
+                            id = itemDB.mict_id,
+                            name = itemDB.MaintenanceItemCategory.mict_name
+                        }
+                    : null,
+                    referencePrice = itemDB.mi_referencePrice,
+                    state = itemDB.mi_state,
+                    handleTax = itemDB.mi_handleTax,
+                    registrationDate = itemDB.mi_registrationDate,
+                    updateDate = itemDB.mi_updateDate,
+                    deleteDate = itemDB.mi_deleteDate
+                };
+
+						    using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+						    {
+                    maintenanceItem.lsVehicleType = db.MaintenanceItemsByVehicleTypes
+                                     .Where(mi => mi.mi_id == itemDB.mi_id)
+                                     .Select(mi => new VehicleTypeViewModel
+                                     {
+                                         id = mi.vt_id,
+                                         name = mi.VehicleType.vt_name,
+                                         state = mi.VehicleType.vt_state,
+                                         registrationDate = mi.mivt_registrationDate
+                                     }).ToList();
+
+                    maintenanceItem.lsVehicleModel = db.MaintenanceItemsByVehicleModels
+                                    .Where(mi => mi.mi_id == itemDB.mi_id)
+                                    .Select(mi => new VehicleModelViewModel
+                                    {
+                                        id = mi.vm_id,
+                                        shortName = mi.VehicleModel.vm_shortName,
+                                        longName = mi.VehicleModel.vm_longName,
+                                        state = mi.VehicleModel.vm_state,
+                                        registrationDate = mi.VehicleModel.vm_registrationDate,
+                                        brand = new BrandViewModel { id = mi.VehicleModel.vb_id, name = mi.VehicleModel.VehicleBrand.vb_name },
+                                        type = new VehicleTypeViewModel { id = mi.VehicleModel.vt_id, name = mi.VehicleModel.VehicleType.vt_name }
+                                    }).ToList();
+                }          
+
+                return maintenanceItem;
+            }
+            catch (Exception ex)
+            {
+
+                throw ex;
+            }
+        }
+
+        /**
+        * Validations to new MaintenanceItem
+        */
+        private static bool isItemHostedIntoDb(string code)
+        {
+            try
+            {
+                using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+                {
+                    var item = db.MaintenanceItem.Where(mi => mi.mi_code == code)
+                                    .FirstOrDefault();
+
+                    if (item != null)
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            }
+            catch (Exception ex)
+            {
+
+                throw ex;
+            }
+        }
+
+        private static bool validateDataMaintenanceItem(MaintenanceItemViewModel maintenanceItem) {
+            if (maintenanceItem.code.Trim() == "")
+            {
+                throw new Exception("El código de referencia del árticulo de mantenimiento no puede ser vacío");
+            }
+
+            if (maintenanceItem.name.Trim() == "")
+            {
+                throw new Exception("El nombre del árticulo de mantenimiento no puede ser vacío");
+            }
+
+            if (maintenanceItem.presentationUnit == null)
+            {
+                throw new Exception("El árticulo de mantenimiento debe tener asignada una presentación");
+            }
+
+            if (maintenanceItem.type == null)
+            {
+                throw new Exception("El árticulo de mantenimiento debe tener asociado un tipo. Sí es Material o Mano de obra");
+            }
+
+            if (maintenanceItem.category == null)
+            {
+                throw new Exception("El árticulo de mantenimiento debe tener asociado una categoría. Sí es Mandatorio o Consultivo");
+            }
+
+            return true;
+        }
+
+        private static void setDataToItemDB(MaintenanceItemViewModel maintenanceItem, ref MaintenanceItem itemDB, bool isToInsert) {
+            
+            itemDB.mi_code = maintenanceItem.code.ToUpper();
+            itemDB.mi_name = maintenanceItem.name.ToUpper();
+            itemDB.mi_description = (maintenanceItem.description != null) ? maintenanceItem.description.ToUpper() : "";
+            itemDB.tmi_id = (int)maintenanceItem.type.id;
+            itemDB.pu_id = (int)maintenanceItem.presentationUnit.id;
+            itemDB.mict_id = (int)maintenanceItem.category.id;
+            itemDB.mi_referencePrice = maintenanceItem.referencePrice;           
+            itemDB.mi_handleTax = (bool)maintenanceItem.handleTax;
+            itemDB.deal_id = (maintenanceItem.dealer != null) ? maintenanceItem.dealer.id : null;         
+
+            if (isToInsert)
+            {
+                itemDB.mi_state = true;
+                itemDB.mi_registrationDate = DateTime.Now;
+            }
+            else {
+                itemDB.mi_updateDate = DateTime.Now;
+            }
+                 
+        }
+
+        public static bool InsertIntoDB(MaintenanceItem pItem)
+        {
+            try
+            {
+                using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+                {
+                    db.MaintenanceItem.Add(pItem);
+                    db.SaveChanges();
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.InnerException.Message);
+            }
+        }
+
+        public static MaintenanceItem getLastMaintenanceItemInserted()
+        {
+            using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+            {                
+                return db.MaintenanceItem.OrderByDescending(itm => itm.mi_id).FirstOrDefault();
+            }
+        }
+
+        public static MaintenanceItemViewModel getMaintenanceItemByTypeId(int typeId)
+        {
+
+            try
+            {
+                using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+                {
+                    var maintenanceItem = db.MaintenanceItem
+                         .Where(mi => mi.mi_state == true && mi.tmi_id == typeId)
+                         .FirstOrDefault();
+
+                    if (maintenanceItem != null)
+                    {
+                        var maintenanceItemFormated = MaintenanceItemController.formatData(maintenanceItem);
+
+                        if (maintenanceItemFormated.handleTax == true)
+                        {
+                            var lsTaxes = MaintenanceItemController.getTaxesByItemId(maintenanceItem.mi_id);
+
+                            if (lsTaxes != null)
+                            {
+                                maintenanceItemFormated.lsTaxes = lsTaxes;
+                            }
+                        }
+                        return maintenanceItemFormated;
+                    }
+                    else
+                    {
+                        return null;
+                    }
+
+                }
+
+            }
+            catch (Exception ex)
+            {
+
+                throw ex;
+            }
+
+        }
+
+        public static MaintenanceItemViewModel getMaintenanceItemById(int itemId) {
+
 						try
 						{
 								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
 								{
-										var lsPresentationUnits = db.PresentationUnit.Where(pu => pu.pu_state == true)
-												.Select(pu => new PresentationUnitViewModel
-												{
-														id = pu.pu_id,
-														shortName = pu.pu_shortName,
-														longName = pu.pu_longName
-												}).ToList();
-										return Ok(lsPresentationUnits);
-								}
+                    var maintenanceItem = db.MaintenanceItem
+                         .Where(mi => mi.mi_state == true && mi.mi_id == itemId)
+                         .FirstOrDefault();
 
+                    if (maintenanceItem != null)
+                    {
+                        var maintenanceItemFormated = MaintenanceItemController.formatData(maintenanceItem);
+
+                        if (maintenanceItemFormated.handleTax == true)
+                        {
+                            var lsTaxes = MaintenanceItemController.getTaxesByItemId(itemId);
+
+                            if (lsTaxes != null)
+                            {
+                                maintenanceItemFormated.lsTaxes = lsTaxes;
+                            }
+                        }
+                        return maintenanceItemFormated;
+                    }
+                    else {
+                        return null;
+                    }                  
+
+                }
+               
+            }
+						catch (Exception ex)
+						{
+
+								throw ex;
+						}
+           
+        }
+
+
+        public static List<MaintenanceItemViewModel> getMaintenanceItems(int dealerId)
+        {
+            try
+            {
+                List<MaintenanceItemViewModel> lsMaintenanceItems = new List<MaintenanceItemViewModel>();
+                List<MaintenanceItemViewModel> lsItemsByDealer = new List<MaintenanceItemViewModel>();
+                //When we send 0 like paramter those are the items created by renting automayor
+                lsMaintenanceItems = MaintenanceItemController.getMaintenanceItemsByDealerId(0);
+
+                if (dealerId > 0)
+                {
+                    //Get Only the maintenance items configured by the dealers
+                    lsItemsByDealer = MaintenanceItemController.getMaintenanceItemsByDealerId(dealerId);
+                }
+
+                if (lsItemsByDealer.Count > 0)
+                {
+                    lsMaintenanceItems.AddRange(lsItemsByDealer);
+                }
+
+                lsMaintenanceItems = MaintenanceItemController.setTaxesToMaintanceItems(lsMaintenanceItems);
+
+                if (dealerId > 0)
+                {
+                    //Just configure the prices if there is a dealer
+                    lsMaintenanceItems = MaintenanceItemController.setPricesByItemAndDealer(lsMaintenanceItems, dealerId);
+                }
+
+                return lsMaintenanceItems;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+
+        }
+
+        private static List<MaintenanceItemViewModel> getMaintenanceItemsByDealerId(int dealerId)
+        {
+            try
+            {
+                int? dealer_id;
+
+                if (dealerId == 0)
+                {
+                    dealer_id = null;
+                }
+                else
+                {
+                    dealer_id = dealerId;
+                }
+
+                using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+                {
+                    var lsMaintenanceItems = db.MaintenanceItem
+                        .Where(mi => mi.mi_state == true && mi.deal_id == dealer_id)
+                        .ToList();
+
+                    var lsMaintenanceItemsFormated = new List<MaintenanceItemViewModel>();
+
+										foreach (var item in lsMaintenanceItems)
+										{
+                        lsMaintenanceItemsFormated.Add(MaintenanceItemController.formatData(item));
+
+                    }
+
+                    return lsMaintenanceItemsFormated;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+
+        }
+
+        private static List<MaintenanceItemViewModel> setTaxesToMaintanceItems(List<MaintenanceItemViewModel> lsMaintenanceItems)
+        {
+            try
+            {
+                foreach (var maintenanceItem in lsMaintenanceItems)
+                {
+                    if (maintenanceItem.handleTax == true)
+                    {
+                        var lsTaxes = MaintenanceItemController.getTaxesByItemId((int)maintenanceItem.id);
+                        if (lsTaxes != null)
+                        {
+                            maintenanceItem.lsTaxes = lsTaxes;
+                        }
+                    }
+                }
+
+                return lsMaintenanceItems;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        private static List<MaintenanceItemViewModel> setPricesByItemAndDealer(List<MaintenanceItemViewModel> maintenanceItems, int dealerId)
+        {
+            try
+            {
+                foreach (var maintenanceItem in maintenanceItems)
+                {
+                    maintenanceItem.referencePrice = MaintenanceItemController.getPriceByMaintenanceItemAndDealer((int)maintenanceItem.id, dealerId);
+                }
+
+                return maintenanceItems;
+            }
+            catch (Exception ex)
+            {
+
+                throw ex;
+            }
+
+        }
+
+        private static float getPriceByMaintenanceItemAndDealer(int maintenanceItemId, int dealerId)
+        {
+            try
+            {
+                using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+                {
+                    var priceByItem = db.PricesByDealer
+                                    .Where(mi => mi.deal_id == dealerId && mi.mi_id == maintenanceItemId)
+                                    .Select(mi => mi.mi_referencePrice)
+                                    .FirstOrDefault();
+
+                    float? priceToReturn = 0;
+
+                    if (priceByItem != null)
+                    {
+                        priceToReturn = priceByItem;
+                    }
+                    else
+                    {
+                        var referencePrice = db.MaintenanceItem
+                                        .Where(mi => mi.mi_id == maintenanceItemId)
+                                        .Select(mi => mi.mi_referencePrice)
+                                        .FirstOrDefault();
+
+                        priceToReturn = referencePrice;
+                    }
+
+                    return (float)priceToReturn;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+
+        }
+       
+        private static void setDataPrice(int dealerId, int itemId, float referencePrice, bool isToInsert, ref PricesByDealer priceByDealer)
+        {
+            priceByDealer.deal_id = dealerId;
+            priceByDealer.mi_id = itemId;
+            priceByDealer.mi_referencePrice = referencePrice;
+
+            if (isToInsert)
+            {
+                priceByDealer.pbd_registrationDate = DateTime.Now;
+            }
+            else
+            {
+                priceByDealer.pbd_updateDate = DateTime.Now;
+            }
+        }
+
+        public static void createPriceByMaintenanceItemAndDealer(int itemId, float price, int dealerId)
+        {
+            try
+            {
+                using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+                {
+                    PricesByDealer priceByDealer = new PricesByDealer();
+                    MaintenanceItemController.setDataPrice(dealerId, itemId, (float)price, true, ref priceByDealer);
+                    db.PricesByDealer.Add(priceByDealer);
+                    db.SaveChanges();
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+
+        }
+
+        public static void updatePriceByMaintenanceItemAndDealer(int itemId, float price, int dealerId)
+        {
+            try
+            {
+                using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+                {
+                    var priceByDealer = db.PricesByDealer.
+                                    Where(mi => mi.mi_id == itemId)
+                                    .FirstOrDefault();
+
+                    MaintenanceItemController.setDataPrice((int)dealerId, itemId, (float)price, false, ref priceByDealer);
+                    db.SaveChanges();
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+
+        }
+
+        public ResponseApiViewModel SetPricesByContract(PricesByContractViewModel pricesByContract)
+        {
+            try
+            {
+                using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+                {
+                    ResponseApiViewModel rta = new ResponseApiViewModel();
+                    string transactionType = "";
+                    int contract_id = (int)pricesByContract.contract.id;
+                    var lsOldPrices = db.PricesByContract.Where(pbc => pbc.cntr_id == pricesByContract.contract.id).ToList();
+
+                    IEnumerable<MaintenanceItemViewModel> lsNewItems = from lsItems in pricesByContract.lsMaintenanceItems
+
+                                                                       where !lsOldPrices.Any(itm => itm.mi_id == lsItems.id)
+
+                                                                       select lsItems;
+                    bool isPercent = pricesByContract.contract.discountType.id == 3;
+
+                    pricesByContract.lsMaintenanceItems.ForEach(item =>
+                    {
+                        var maintenceItem = db.PricesByContract
+                            .Where(p => p.mi_id == item.id && p.cntr_id == contract_id).FirstOrDefault();
+                        float valueDiscount = (float)(item.valueDiscount is null ? 0 : item.valueDiscount);
+                        if(maintenceItem is null)
+                        {
+                            PricesByContract priceByContract = new PricesByContract();
+                            this.setDataPricesByContract(contract_id, (int)item.id, (float)item.referencePrice, "INSERT", ref priceByContract, valueDiscount, isPercent);
+                            db.PricesByContract.Add(priceByContract);
+                            db.SaveChanges();
+                        }
+                        else
+                        {
+                            PricesByContract priceByContract = db.PricesByContract.Where(pbc => pbc.pbc_id == maintenceItem.pbc_id).FirstOrDefault();
+                            this.setDataPricesByContract(contract_id, (int)item.id, (float)item.referencePrice, transactionType, ref priceByContract, valueDiscount, isPercent);
+                            db.SaveChanges();
+                        }
+                    });
+
+                    //if (lsOldPrices.Count > 0)
+                    //{
+                    //    foreach (var oldPrice in lsOldPrices)
+                    //    {
+                    //        var newPrice = pricesByContract.lsMaintenanceItems.Find(it => it.id == oldPrice.mi_id);
+                    //        if (oldPrice.mi_referencePrice != newPrice.referencePrice)
+                    //        {
+                    //            transactionType = "UPDATE";
+                    //            PricesByContract priceByContract = db.PricesByContract.Where(pbc => pbc.pbc_id == oldPrice.pbc_id).FirstOrDefault();
+                    //            this.setDataPricesByContract(contract_id, (int)oldPrice.mi_id, (float)newPrice.referencePrice, transactionType, ref priceByContract, (float)newPrice.valueDiscount, isPercent);
+                    //            db.SaveChanges();
+                    //        }
+
+                    //        foreach (var item in lsNewItems)
+                    //        {
+                    //            PricesByContract priceByContract = new PricesByContract();
+                    //            this.setDataPricesByContract((int)pricesByContract.contract.id, (int)item.id, (float)item.referencePrice, "INSERT", ref priceByContract);
+                    //            db.PricesByContract.Add(priceByContract);
+                    //            db.SaveChanges();
+                    //        }
+                    //    }
+
+                    //}
+                    //else
+                    //{
+                    //    transactionType = "INSERT";
+                    //    foreach (var item in pricesByContract.lsMaintenanceItems)
+                    //    {
+                    //        PricesByContract priceByContract = new PricesByContract();
+                    //        this.setDataPricesByContract(contract_id, (int)item.id, (float)item.referencePrice, transactionType, ref priceByContract, (float)item.valueDiscount, isPercent);
+                    //        db.PricesByContract.Add(priceByContract);
+                    //        db.SaveChanges();
+                    //    }
+
+                    //}
+
+                    rta.response = true;
+                    rta.message = "Se han asignado los precios del contrato: " + pricesByContract.contract.code;
+                    return rta;
+                }
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
+        }
+
+        private void setDataPricesByContract(int contract_id, int maintenanceItem_id, float referencePrice, string transacctionType, ref PricesByContract priceByContract, float valueDiscount = 0, bool isPercent = false)
+        {
+
+            priceByContract.cntr_id = contract_id;
+            priceByContract.mi_id = maintenanceItem_id;
+            priceByContract.mi_referencePrice = referencePrice;
+            priceByContract.isPercent = isPercent;
+            priceByContract.discountValue = (int)valueDiscount;
+
+            if (transacctionType == "INSERT")
+            {
+                priceByContract.pbc_registrationDate = DateTime.Now;
+            }
+
+            if (transacctionType == "UPDATE")
+            {
+                priceByContract.pbc_updateDate = DateTime.Now;
+            }
+        }
+
+       
+
+        public static void configurePricesByMaintenanceItemAndDealer(int dealerId, List<MaintenanceItemViewModel> maintenanceItems, bool isToInsert)
+        {
+
+            try
+            {
+                using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+                {
+                    if (isToInsert)
+                    {
+                        foreach (var item in maintenanceItems)
+                        {
+                            MaintenanceItemController.createPriceByMaintenanceItemAndDealer((int)item.id, (float)item.referencePrice, dealerId);
+                        }
+                    }
+                    else
+                    {
+                        var lsOldPrices = db.PricesByDealer
+                                        .Where(pbd => pbd.deal_id == dealerId).ToList();
+
+                        IEnumerable<MaintenanceItemViewModel> lsNewItems = from lsItems in maintenanceItems
+
+                                                                           where !lsOldPrices.Any(itm => itm.mi_id == lsItems.id)
+
+                                                                           select lsItems;
+
+                        if (lsOldPrices.Count > 0)
+                        {
+                            int index = 0;
+                            foreach (var oldPrice in lsOldPrices)
+                            {
+                                var newPrice = maintenanceItems.Find(mi => mi.id == oldPrice.mi_id && mi.state == true);
+                                if (newPrice != null)
+                                {
+                                    if (oldPrice.mi_referencePrice != newPrice.referencePrice)
+                                    {
+                                        MaintenanceItemController.updatePriceByMaintenanceItemAndDealer((int)oldPrice.mi_id, (float)newPrice.referencePrice, dealerId);
+                                    }
+                                }
+                                else
+                                {
+                                    if (index <= maintenanceItems.Count - 1) {
+                                        MaintenanceItemController
+                                        .createPriceByMaintenanceItemAndDealer((int)maintenanceItems[index].id, (float)maintenanceItems[index].referencePrice, dealerId);
+                                    }
+                                }
+                                index++;
+                            }
+
+                            foreach (var item in lsNewItems)
+                            {
+                                MaintenanceItemController.createPriceByMaintenanceItemAndDealer((int)item.id, (float)item.referencePrice, dealerId);
+                            }
+                        }else
+                        {
+                            maintenanceItems.ForEach(item =>
+                            {
+                                MaintenanceItemController.createPriceByMaintenanceItemAndDealer((int)item.id, (float)item.referencePrice, dealerId);
+                            });
+                        }
+                    }
+
+                }
+            }
+            catch (Exception ex)
+            {
+
+                throw ex;
+            }
+        }
+
+        public static List<TaxViewModel> getTaxesByItemId(int itemId)
+        {
+            try
+            {
+                using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+                {
+                    var taxes = db.TaxesByMaintenanceItem
+                        .Where(tx => tx.mi_id == itemId)
+                        .Select(tx => new TaxViewModel
+                        {
+                            id = tx.tax_id,
+                            name = tx.Taxes.tax_name,
+                            description = tx.Taxes.tax_desccription,
+                            percentValue = tx.Taxes.tax_percentValue,
+                            registrationDate = tx.Taxes.tax_registrationDate
+                        }).ToList();
+
+                    return taxes;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        public static void configureTaxesByItemId(int itemID, List<TaxViewModel> taxes, bool isToInsert) {
+						try
+						{
+								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+								{
+                    if (!isToInsert) {
+                        MaintenanceItemController.deleteTaxesByItem(itemID);
+                    }
+
+                    foreach (var tax in taxes)
+                    {
+                        TaxesByMaintenanceItem txmi = new TaxesByMaintenanceItem();
+                        txmi.mi_id = itemID;
+                        txmi.tax_id = (int)tax.id;
+                        txmi.txmi_registrationDate = DateTime.Now;                 
+
+                        db.TaxesByMaintenanceItem.Add(txmi);
+                        db.SaveChanges();
+                    }                    
+                }
 						}
 						catch (Exception ex)
 						{
-								return BadRequest(ex.Message);
+								throw ex;
 						}
-				}
-
-				[HttpGet]
-				public IHttpActionResult GetCategories()
-				{
-						try
-						{
-								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
-								{
-										var lsCategories = db.MaintenanceItemCategory.Where(ct => ct.mict_state == true)
-																						.Select(ct => new CategoryViewModel
-																						{
-																								id = ct.mict_id,
-																								name = ct.mict_name,
-																								sate = ct.mict_state,
-																								registrationDate = ct.mict_registrationDate
-																						}).ToList();
-										return Ok(lsCategories);
-								}
-
-						}
-						catch (Exception ex)
-						{
-								return BadRequest(ex.Message);
-						}
-				}
-
-				[HttpGet]
-				public IHttpActionResult GetTypeOfMaintenanceItem()
-				{
-						try
-						{
-								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
-								{
-										var lsType = db.TypeOfMaintenanceItem.Where(tp => tp.tmi_state == true)
-												.Select(tp => new TypeOfMaintenanceItemViewModel
-												{
-														id = tp.tmi_id,
-														name = tp.tmi_name,
-												}).ToList();
-										return Ok(lsType);
-								}
-
-						}
-						catch (Exception ex)
-						{
-								return BadRequest(ex.Message);
-						}
-				}
-
-				[HttpGet]
-				public IHttpActionResult Get(int dealer_id)
-				{
-						try
-						{
-
-								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
-								{
-										IEnumerable<MaintenanceItemViewModel> lsMaintenanceItems;
-
-										if (dealer_id > 0)
-										{
-												lsMaintenanceItems = db.MaintenanceItem.Where(mi => mi.mi_state == true && (mi.deal_id == dealer_id || mi.deal_id == null))
-																								.Select(mi => new MaintenanceItemViewModel
-																								{
-																										id = mi.mi_id,
-																										code = mi.mi_code,
-																										name = mi.mi_name,
-																										description = mi.mi_description,
-																										type = new TypeOfMaintenanceItemViewModel
-																										{
-																												id = mi.tmi_id,
-																												name = mi.TypeOfMaintenanceItem.tmi_name
-																										},
-																										presentationUnit = new PresentationUnitViewModel
-																										{
-																												id = mi.pu_id,
-																												shortName = mi.PresentationUnit.pu_shortName,
-																												longName = mi.PresentationUnit.pu_longName
-																										},
-																										category = (mi.mict_id != null) ? new CategoryViewModel
-																										{
-																												id = mi.mict_id,
-																												name = mi.MaintenanceItemCategory.mict_name
-																										} : null,
-																										referencePrice = mi.mi_referencePrice,
-																										state = mi.mi_state,
-																										handleTax = mi.mi_handleTax,
-																										registrationDate = mi.mi_registrationDate
-																								}).ToList()
-																								.Take(100)
-																								.OrderBy(mi => mi.type.name)
-																								.ThenBy(mi => mi.name);
-										}
-										else {
-												lsMaintenanceItems = db.MaintenanceItem.Where(mi => mi.mi_state == true)
-																										.Select(mi => new MaintenanceItemViewModel
-																										{
-																												id = mi.mi_id,
-																												code = mi.mi_code,
-																												name = mi.mi_name,
-																												description = mi.mi_description,
-																												type = new TypeOfMaintenanceItemViewModel
-																												{
-																														id = mi.tmi_id,
-																														name = mi.TypeOfMaintenanceItem.tmi_name
-																												},
-																												presentationUnit = new PresentationUnitViewModel
-																												{
-																														id = mi.pu_id,
-																														shortName = mi.PresentationUnit.pu_shortName,
-																														longName = mi.PresentationUnit.pu_longName
-																												},
-																												category = (mi.mict_id != null) ? new CategoryViewModel
-																												{
-																														id = mi.mict_id,
-																														name = mi.MaintenanceItemCategory.mict_name
-																												} : null,
-																												referencePrice = mi.mi_referencePrice,
-																												state = mi.mi_state,
-																												handleTax = mi.mi_handleTax,
-																												registrationDate = mi.mi_registrationDate
-																										}).ToList()
-																										.Take(100)
-																										.OrderBy(mi => mi.type.name)
-																										.ThenBy(mi => mi.name);
-										}
-										
-
-
-										foreach (var maintenanceItem in lsMaintenanceItems)
-										{
-												if (maintenanceItem.handleTax == true) {
-														var lsTaxes = db.TaxesByMaintenanceItem.Where(tx => tx.mi_id == maintenanceItem.id)
-																																	.Select(tx => new TaxViewModel
-																																	{
-																																			id = tx.tax_id,
-																																			name = tx.Taxes.tax_name,
-																																			description = tx.Taxes.tax_desccription,
-																																			percentValue = tx.Taxes.tax_percentValue,
-																																			registrationDate = tx.Taxes.tax_registrationDate
-																																	}).ToList();
-
-														if (lsTaxes != null) {
-																maintenanceItem.lsTaxes = lsTaxes;
-														}
-												}
-										}
-
-
-										return Ok(lsMaintenanceItems);
-								}
-
-						}
-						catch (Exception ex)
-						{
-
-								return BadRequest(ex.Message);
-						}
-				}
-
-				[HttpGet]
-				public IHttpActionResult GetById(int itemId)
-				{
-						try
-						{
-								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
-								{
-
-										var maintenanceItem = db.MaintenanceItem.Where(mi => mi.mi_state == true && mi.mi_id == itemId)
-																								.Select(mi => new MaintenanceItemViewModel
-																								{
-																										id = mi.mi_id,
-																										code = mi.mi_code,
-																										name = mi.mi_name,
-																										description = mi.mi_description,
-																										type = new TypeOfMaintenanceItemViewModel
-																										{
-																												id = mi.tmi_id,
-																												name = mi.TypeOfMaintenanceItem.tmi_name
-																										},
-																										presentationUnit = new PresentationUnitViewModel
-																										{
-																												id = mi.pu_id,
-																												shortName = mi.PresentationUnit.pu_shortName,
-																												longName = mi.PresentationUnit.pu_longName
-																										},
-																										category = (mi.mict_id != null) ? new CategoryViewModel
-																										{
-																												id = mi.mict_id,
-																												name = mi.MaintenanceItemCategory.mict_name
-																										} : null,
-																										referencePrice = mi.mi_referencePrice,
-																										state = mi.mi_state,
-																										handleTax = mi.mi_handleTax,
-																										registrationDate = mi.mi_registrationDate
-																								}).FirstOrDefault();
-
-										maintenanceItem.lsVehicleType = db.MaintenanceItemsByVehicleTypes.Where(mi => mi.mi_id == itemId)
-																												.Select(mi => new VehicleTypeViewModel
-																												{
-																														id = mi.vt_id,
-																														name = mi.VehicleType.vt_name,
-																														state = mi.VehicleType.vt_state,
-																														registrationDate = mi.mivt_registrationDate
-																												}).ToList();
-
-										maintenanceItem.lsVehicleModel = db.MaintenanceItemsByVehicleModels.Where(mi => mi.mi_id == itemId)
-																												.Select(mi => new VehicleModelViewModel
-																												{
-																														id = mi.vm_id,
-																														shortName = mi.VehicleModel.vm_shortName,
-																														longName = mi.VehicleModel.vm_longName,
-																														state = mi.VehicleModel.vm_state,
-																														registrationDate = mi.VehicleModel.vm_registrationDate,
-																														brand = new BrandViewModel { id = mi.VehicleModel.vb_id, name = mi.VehicleModel.VehicleBrand.vb_name },
-																														type = new VehicleTypeViewModel { id = mi.VehicleModel.vt_id, name = mi.VehicleModel.VehicleType.vt_name }
-																												}).ToList();
-
-										if (maintenanceItem.handleTax == true)
-										{
-												var lsTaxes = db.TaxesByMaintenanceItem.Where(tx => tx.mi_id == maintenanceItem.id)
-																															.Select(tx => new TaxViewModel
-																															{
-																																	id = tx.tax_id,
-																																	name = tx.Taxes.tax_name,
-																																	description = tx.Taxes.tax_desccription,
-																																	percentValue = tx.Taxes.tax_percentValue,
-																																	registrationDate = tx.Taxes.tax_registrationDate
-																															}).ToList();
-
-												if (lsTaxes != null)
-												{
-														maintenanceItem.lsTaxes = lsTaxes;
-												}
-										}
-
-
-										return Ok(maintenanceItem);
-								}
-
-						}
-						catch (Exception ex)
-						{
-
-								return BadRequest(ex.Message);
-						}
-				}
-
-				[HttpGet]
-				public IHttpActionResult GetByType(int typeId)
-				{
-						try
-						{
-								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
-								{
-
-										var lsMaintenanceItems = db.MaintenanceItem.Where(mi => mi.mi_state == true && mi.tmi_id == typeId)
-																								.Select(mi => new MaintenanceItemViewModel
-																								{
-																										id = mi.mi_id,
-																										code = mi.mi_code,
-																										name = mi.mi_name,
-																										description = mi.mi_description,
-																										type = new TypeOfMaintenanceItemViewModel
-																										{
-																												id = mi.tmi_id,
-																												name = mi.TypeOfMaintenanceItem.tmi_name
-																										},
-																										presentationUnit = new PresentationUnitViewModel
-																										{
-																												id = mi.pu_id,
-																												shortName = mi.PresentationUnit.pu_shortName,
-																												longName = mi.PresentationUnit.pu_longName
-																										},
-																										category = (mi.mict_id != null) ? new CategoryViewModel
-																										{
-																												id = mi.mict_id,
-																												name = mi.MaintenanceItemCategory.mict_name
-																										} : null,
-																										referencePrice = mi.mi_referencePrice,
-																										state = mi.mi_state,
-																										registrationDate = mi.mi_registrationDate
-																								}).ToList()
-																								.OrderBy(mi => mi.name);
-
-										return Ok(lsMaintenanceItems);
-								}
-
-						}
-						catch (Exception ex)
-						{
-
-								return BadRequest(ex.Message);
-						}
-				}
-
-
-
-				[HttpGet]
-				public IHttpActionResult GetItemsByVehicleModel(int pVehicleModel_id = 0)
-				{
-						try
-						{
-								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
-								{
-
-										var oVehicleModel = db.VehicleModel.Where(vm => vm.vm_id == pVehicleModel_id)
-																						.Select(vm => new VehicleModelViewModel
-																						{
-																								id = vm.vm_id,
-																								shortName = vm.vm_shortName,
-																								longName = vm.vm_longName,
-																								state = vm.vm_state,
-																								registrationDate = vm.vm_registrationDate,
-																								brand = new BrandViewModel { id = vm.vb_id, name = vm.VehicleBrand.vb_name },
-																								type = new VehicleTypeViewModel { id = vm.vt_id, name = vm.VehicleType.vt_name }
-																						}).FirstOrDefault();
-
-										var lsItemsConfiguratedByVehicleModel = db.MaintenanceItemsByVehicleModels
-																																.Where(vm => vm.vm_id == pVehicleModel_id && vm.MaintenanceItem.mi_state == true)
-																																.ToList();
-
-										var lsItemsConfiguratedByVehicleType = db.MaintenanceItemsByVehicleTypes
-																																.Where(vt => vt.vt_id == oVehicleModel.type.id && vt.MaintenanceItem.mi_state == true)
-																																.ToList();
-
-
-
-										var lsItemConfigurated = new List<int>();
-
-										foreach (var item in lsItemsConfiguratedByVehicleType)
-										{
-												lsItemConfigurated.Add((int)item.mi_id);
-										}
-
-										foreach (var item in lsItemsConfiguratedByVehicleModel)
-										{
-												lsItemConfigurated.Add((int)item.mi_id);
-										}
-
-										var lsMaintenanceItems = db.MaintenanceItem
-																								.Where(mi => mi.mi_state == true && lsItemConfigurated.Any(item => item == mi.mi_id) && (mi.deal_id == null ))
-																								.Select(mi => new MaintenanceItemViewModel
-																								{
-																										id = mi.mi_id,
-																										code = mi.mi_code,
-																										name = mi.mi_name,
-																										description = mi.mi_description,
-																										type = new TypeOfMaintenanceItemViewModel
-																										{
-																												id = mi.tmi_id,
-																												name = mi.TypeOfMaintenanceItem.tmi_name
-																										},
-																										presentationUnit = new PresentationUnitViewModel
-																										{
-																												id = mi.pu_id,
-																												shortName = mi.PresentationUnit.pu_shortName,
-																												longName = mi.PresentationUnit.pu_longName
-																										},
-																										category = (mi.mict_id != null) ? new CategoryViewModel
-																										{
-																												id = mi.mict_id,
-																												name = mi.MaintenanceItemCategory.mict_name
-																										} : null,
-																										referencePrice = mi.mi_referencePrice,
-																										state = mi.mi_state,
-																										handleTax = mi.mi_handleTax,
-																										registrationDate = mi.mi_registrationDate
-																								}).ToList();
-
-
-										foreach (var maintenanceItem in lsMaintenanceItems)
-										{
-												if (maintenanceItem.handleTax == true)
-												{
-														var lsTaxes = db.TaxesByMaintenanceItem.Where(tx => tx.mi_id == maintenanceItem.id)
-																																	.Select(tx => new TaxViewModel
-																																	{
-																																			id = tx.tax_id,
-																																			name = tx.Taxes.tax_name,
-																																			description = tx.Taxes.tax_desccription,
-																																			percentValue = tx.Taxes.tax_percentValue,
-																																			registrationDate = tx.Taxes.tax_registrationDate
-																																	}).ToList();
-
-														if (lsTaxes != null)
-														{
-																maintenanceItem.lsTaxes = lsTaxes;
-														}
-												}
-											
-										}
-
-
-										return Ok(lsMaintenanceItems);
-								}
-
-						}
-						catch (Exception ex)
-						{
-
-								return BadRequest(ex.Message);
-						}
-				}
-
-
-				[HttpPost]
-				public IHttpActionResult Insert(MaintenanceItemViewModel pItem)
-				{
-						try
-						{
-								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
-								{
-										ResponseApiViewModel rta = new ResponseApiViewModel();
-
-										var itemExists = db.MaintenanceItem.Where(mi => mi.mi_code == pItem.code ).FirstOrDefault();
-
-										if (itemExists != null) {
-												throw new Exception("No se puede guardar el item de mantenimiento puesto que el código: " + pItem.code + " Ya se encuentra almacenado en la base de datos");
-										}
-
-										var oMaintenanceItem = MaintenanceItemViewModel.setDataToItem(pItem);
-										var ItemWasSaved = MaintenanceItemViewModel.InsertIntoDB(oMaintenanceItem);
-										if (ItemWasSaved)
-										{
-												var itemId = MaintenanceItemViewModel.GetMaintenanceItemId(pItem.code);
-
-												if (itemId != 0)
-												{
-														var lsVehicleType = pItem.lsVehicleType;
-														if (lsVehicleType.Count > 0)
-														{
-																MaintenanceItemViewModel.InsertMaintenanceItemByVehicleType(itemId, lsVehicleType);
-														}
-
-														var lsVehicleModel = pItem.lsVehicleModel;
-														if (lsVehicleModel.Count > 0)
-														{
-																MaintenanceItemViewModel.InsertMaintenanceItemByVehicleModel(itemId, lsVehicleModel);
-														}
-
-
-														if (pItem.handleTax == true) {
-																foreach (var tax in pItem.lsTaxes)
-																{
-																		TaxesByMaintenanceItem txmi = new TaxesByMaintenanceItem();
-
-																		txmi.mi_id = (int)itemId;
-																		txmi.tax_id = (int)tax.id;
-																		txmi.txmi_registrationDate = DateTime.Now;
-
-																		db.TaxesByMaintenanceItem.Add(txmi);
-																		db.SaveChanges();
-																}
-														}
-
-														if (pItem.dealer != null) {
-																var itemTemp = db.MaintenanceItem.Where(mi => mi.mi_id == itemId).FirstOrDefault();
-																itemTemp.deal_id = pItem.dealer.id;
-																db.SaveChanges();
-														}
-														
-
-												}
-
-
-												rta.response = true;
-												rta.message = "El artículo de mantenimiento " + pItem.code + " fue almacenado correctamente en la base de datos";
-												return Ok(rta);
-										}
-										else
-										{
-												return BadRequest("Sucedio algo en la inserción del artículo de mantenimiento");
-										}
-								}
-						}
-						catch (Exception ex)
-						{
-								return BadRequest(ex.Message);
-						}
-				}
-
-				[HttpPost]
-				public IHttpActionResult Update(MaintenanceItemViewModel pItem)
-				{
-						try
-						{
-								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
-								{
-										ResponseApiViewModel rta = new ResponseApiViewModel();
-										var oItemDB = db.MaintenanceItem.Where(it => it.mi_id == pItem.id).FirstOrDefault();
-										oItemDB.mi_code = pItem.code.ToUpper();
-										oItemDB.mi_name = pItem.name.ToUpper();
-										oItemDB.mi_description = (pItem.description != null) ?pItem.description.ToUpper():"";
-										oItemDB.mi_referencePrice = pItem.referencePrice;
-										oItemDB.mi_handleTax = (bool)pItem.handleTax;
-
-										if (pItem.type == null)
-										{
-												throw new Exception("No se puede actualizar el artículo debido a que no tiene un tipo definido.");
-										}
-										else
-										{
-												oItemDB.tmi_id = (int)pItem.type.id;
-										}
-
-										if (pItem.presentationUnit == null)
-										{
-												throw new Exception("No se puede actualizar el artículo debido a que no tiene una presentación definida.");
-										}
-										else
-										{
-												oItemDB.pu_id = (int)pItem.presentationUnit.id;
-										}
-
-										if (pItem.category != null)
-										{
-												oItemDB.mict_id = (int)pItem.category.id;
-										}
-										
-										if (pItem.dealer != null)
-										{
-												if (oItemDB.deal_id != null) {
-														oItemDB.deal_id = pItem.dealer.id;
-												}
-										}
-										oItemDB.mi_updateDate = DateTime.Now;
-										db.SaveChanges();
-
-
-										MaintenanceItemViewModel.DeleteMaintenanceItemOfVehicleTypesAndModels((int)pItem.id);
-
-										var lsVehicleType = pItem.lsVehicleType;
-										if (lsVehicleType.Count > 0)
-										{
-												MaintenanceItemViewModel.InsertMaintenanceItemByVehicleType((int)pItem.id, lsVehicleType);
-										}
-
-										var lsVehicleModel = pItem.lsVehicleModel;
-										if (lsVehicleModel.Count > 0)
-										{
-												MaintenanceItemViewModel.InsertMaintenanceItemByVehicleModel((int)pItem.id, lsVehicleModel);
-										}
-										//First remove the old taxes
-										this.deleteTaxesByItem((int)pItem.id);
-										//Update the taxes
-										if (pItem.handleTax == true)
-										{
-												foreach (var tax in pItem.lsTaxes)
-												{
-														TaxesByMaintenanceItem txmi = new TaxesByMaintenanceItem();
-
-														txmi.mi_id = (int)pItem.id;
-														txmi.tax_id = (int)tax.id;
-														txmi.txmi_registrationDate = DateTime.Now;
-
-														db.TaxesByMaintenanceItem.Add(txmi);
-														db.SaveChanges();
-												}
-										}
-
-										rta.response = true;
-										rta.message = "Se ha actualizado el artículo de mantenimiento: " + pItem.name + " de la base de datos";
-										return Ok(rta);
-								}
-						}
-						catch (Exception ex)
-						{
-								return BadRequest(ex.Message);
-						}
-				}
-
-
-				[HttpPost]
-				public IHttpActionResult Delete(MaintenanceItemViewModel pItem)
-				{
-						try
-						{
-								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
-								{
-										ResponseApiViewModel rta = new ResponseApiViewModel();
-										var oItemDB = db.MaintenanceItem.Where(it => it.mi_id == pItem.id).FirstOrDefault();
-										oItemDB.mi_state = false;
-										oItemDB.mi_deleteDate = DateTime.Now;
-										db.SaveChanges();
-
-										MaintenanceItemViewModel.DeleteMaintenanceItemOfVehicleTypesAndModels((int)pItem.id);
-
-										rta.response = true;
-										rta.message = "Se ha eliminado el artículo de mantenimiento: " + pItem.name + " de la base de datos";
-										return Ok(rta);
-								}
-						}
-						catch (Exception ex)
-						{
-								return BadRequest(ex.Message);
-						}
-				}
-
-				[HttpGet]
-				public IHttpActionResult GetPricesByDealer(int pDealer_id)
-				{
-						try
-						{
-								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
-								{
-										PricesByDealerViewModel lsPricesByItem = new PricesByDealerViewModel();
-
-
-										lsPricesByItem.dealer = db.Dealer.Where(deal => deal.deal_id == pDealer_id)
-																												.Select(deal => new DealerViewModel
-																												{
-																														id = deal.deal_id,
-																														name = deal.deal_name
-																												}).FirstOrDefault();
-
-										lsPricesByItem.lsMaintenanceItems = db.PricesByDealer
-																						.Where(pbd => pbd.deal_id == pDealer_id)
-																						.Select(
-																								pbd => new MaintenanceItemViewModel
-																								{
-																										id = pbd.mi_id,
-																										code = pbd.MaintenanceItem.mi_code,
-																										name = pbd.MaintenanceItem.mi_name,
-																										description = pbd.MaintenanceItem.mi_description,
-																										type = new TypeOfMaintenanceItemViewModel
-																										{
-																												id = pbd.MaintenanceItem.tmi_id,
-																												name = pbd.MaintenanceItem.TypeOfMaintenanceItem.tmi_name
-																										},
-																										presentationUnit = new PresentationUnitViewModel
-																										{
-																												id = pbd.MaintenanceItem.pu_id,
-																												shortName = pbd.MaintenanceItem.PresentationUnit.pu_shortName,
-																												longName = pbd.MaintenanceItem.PresentationUnit.pu_longName
-																										},
-																										category = (pbd.MaintenanceItem.mict_id != null) ? new CategoryViewModel
-																										{
-																												id = pbd.MaintenanceItem.mict_id,
-																												name = pbd.MaintenanceItem.MaintenanceItemCategory.mict_name
-																										} : null,
-																										referencePrice = pbd.mi_referencePrice,
-																										state = pbd.MaintenanceItem.mi_state,
-																										registrationDate = pbd.MaintenanceItem.mi_registrationDate
-																								}
-																						).ToList();
-
-
-										return Ok(lsPricesByItem);
-								}
-						}
-						catch (Exception ex)
-						{
-								return BadRequest(ex.Message);
-						}
-				}
-
-
-				[HttpPost]
-				public IHttpActionResult SetPricesByDealer(PricesByDealerViewModel pricesByDealer)
-				{
-						try
-						{
-								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
-								{
-										ResponseApiViewModel rta = new ResponseApiViewModel();
-
-										var lsOldPrices = db.PricesByDealer.Where(pbd => pbd.deal_id == pricesByDealer.dealer.id).ToList();
-
-										IEnumerable<MaintenanceItemViewModel> lsNewItems =  from lsItems in pricesByDealer.lsMaintenanceItems
-																																				where !lsOldPrices.Any(itm => itm.mi_id == lsItems.id)
-																																				select lsItems;
-
-
-										if (lsOldPrices.Count > 0)
-										{
-												foreach (var oldPrice in lsOldPrices)
-												{
-														var newPrice = pricesByDealer.lsMaintenanceItems.Find(mi => mi.id == oldPrice.mi_id && mi.state == true);
-														if (newPrice != null) {
-																if (oldPrice.mi_referencePrice != newPrice.referencePrice)
-																{
-																		PricesByDealer priceByDealer = db.PricesByDealer.Where(pbd => pbd.pbd_id == oldPrice.pbd_id).FirstOrDefault();
-																		this.setDataPrice((int)pricesByDealer.dealer.id, (int)oldPrice.mi_id, (float)newPrice.referencePrice, "UPDATE", ref priceByDealer);
-																		db.SaveChanges();
-																}
-														}
-																										
-												}
-
-
-												foreach (var item in lsNewItems) {
-														PricesByDealer priceByDealer = new PricesByDealer();
-														this.setDataPrice((int)pricesByDealer.dealer.id, (int)item.id, (float)item.referencePrice, "INSERT", ref priceByDealer);
-														db.PricesByDealer.Add(priceByDealer);
-														db.SaveChanges();
-												}
-										}
-										else
-										{
-												foreach (var item in pricesByDealer.lsMaintenanceItems)
-												{
-														PricesByDealer priceByDealer = new PricesByDealer();
-														this.setDataPrice((int)pricesByDealer.dealer.id, (int)item.id, (float)item.referencePrice, "INSERT", ref priceByDealer);
-														db.PricesByDealer.Add(priceByDealer);
-														db.SaveChanges();
-												}
-										}
-
-										rta.response = true;
-										rta.message = "Se han asociado de manera correcta los precios para el concesionario: " + pricesByDealer.dealer.name;
-
-										return Ok(rta);
-								}
-
-						}
-						catch (Exception ex)
-						{
-								return BadRequest(ex.Message);
-						}
-				}
-
-				private void setDataPrice(int dealerId, int itemId, float referencePrice, string transacctionType, ref PricesByDealer priceByDealer)
-				{
-						priceByDealer.deal_id = dealerId;
-						priceByDealer.mi_id = itemId;
-						priceByDealer.mi_referencePrice = referencePrice;
-
-						if (transacctionType == "INSERT")
-						{
-								priceByDealer.pbd_registrationDate = DateTime.Now;
-						}
-
-						if (transacctionType == "UPDATE")
-						{
-								priceByDealer.pbd_updateDate = DateTime.Now;
-						}
-				}
-
-
-				[HttpGet]
-				public IHttpActionResult GetPricesByContract(int pContract_id)
-				{
-						try
-						{
-								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
-								{
-										var priceByContract = new PricesByContractViewModel();
-
-										priceByContract.contract = db.Contract.Where(ct => ct.cntr_id == pContract_id)
-																										.Select(ct => new ContractViewModel
-																										{
-																												id = ct.cntr_id,
-																												consecutive = ct.cntr_consecutive,
-																												code = ct.cntr_code,
-																												name = ct.cntr_name,
-																												observation = ct.cntr_observation,
-																												dealer = new DealerViewModel
-																												{
-																														id = ct.deal_id,
-																														document = ct.Dealer.deal_document,
-																														name = ct.Dealer.deal_name
-																												},
-																												client = new ClientViewModel
-																												{
-																														id = ct.cli_id,
-																														document = ct.Client.cli_document,
-																														name = ct.Client.cli_name
-																												},
-																												contractState = new ContractStateViewModel
-																												{
-																														id = ct.cntrst_id,
-																														name = ct.ContractState.cntrst_name,
-																														description = ct.ContractState.cntrst_description
-																												},
-																												discountType = new DiscountTypeViewModel
-																												{
-																														id = ct.dst_id,
-																														name = ct.DiscountType.dst_name
-																												},
-																												discountValue = ct.cntr_discountValue,
-																												amountOfMaintenances = ct.cntr_amountOfMaintenances,
-																												amountVehicles = ct.cntr_amountVehicles,
-																												startingDate = ct.cntr_startingDate,
-																												endingDate = ct.cntr_endingDate,
-																												duration = ct.cntr_duration,
-																												registrationDate = ct.cntr_registrationDate
-																										}
-																										).FirstOrDefault();
-
-										priceByContract.lsMaintenanceItems = db.PricesByContract.Where(ct => ct.cntr_id == pContract_id)
-																														.Select(
-																																pbc => new MaintenanceItemViewModel
-																																{
-																																		id = pbc.mi_id,
-																																		code = pbc.MaintenanceItem.mi_code,
-																																		name = pbc.MaintenanceItem.mi_name,
-																																		description = pbc.MaintenanceItem.mi_description,
-																																		type = new TypeOfMaintenanceItemViewModel
-																																		{
-																																				id = pbc.MaintenanceItem.tmi_id,
-																																				name = pbc.MaintenanceItem.TypeOfMaintenanceItem.tmi_name
-																																		},
-																																		presentationUnit = new PresentationUnitViewModel
-																																		{
-																																				id = pbc.MaintenanceItem.pu_id,
-																																				shortName = pbc.MaintenanceItem.PresentationUnit.pu_shortName,
-																																				longName = pbc.MaintenanceItem.PresentationUnit.pu_longName
-																																		},
-																																		category = (pbc.MaintenanceItem.mict_id != null) ? new CategoryViewModel
-																																		{
-																																				id = pbc.MaintenanceItem.mict_id,
-																																				name = pbc.MaintenanceItem.MaintenanceItemCategory.mict_name
-																																		} : null,
-																																		referencePrice = pbc.mi_referencePrice,
-																																		state = pbc.MaintenanceItem.mi_state,
-																																		handleTax = pbc.MaintenanceItem.mi_handleTax
-
-																																}
-																														).ToList();
-
-										foreach (var maintenanceItem in priceByContract.lsMaintenanceItems)
-										{
-												if (maintenanceItem.handleTax == true)
-												{
-														var lsTaxes = db.TaxesByMaintenanceItem.Where(tx => tx.mi_id == maintenanceItem.id)
-																																	.Select(tx => new TaxViewModel
-																																	{
-																																			id = tx.tax_id,
-																																			name = tx.Taxes.tax_name,
-																																			description = tx.Taxes.tax_desccription,
-																																			percentValue = tx.Taxes.tax_percentValue,
-																																			registrationDate = tx.Taxes.tax_registrationDate
-																																	}).ToList();
-
-														if (lsTaxes != null)
-														{
-																maintenanceItem.lsTaxes = lsTaxes;
-														}
-												}
-
-										}
-
-										return Ok(priceByContract);
-								}
-						}
-						catch (Exception ex)
-						{
-								return BadRequest(ex.Message);
-						}
-				}
-
-				public ResponseApiViewModel SetPricesByContract(PricesByContractViewModel pricesByContract)
-				{
-						try
-						{
-								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
-								{
-										ResponseApiViewModel rta = new ResponseApiViewModel();
-										string transactionType = "";
-										int contract_id = (int)pricesByContract.contract.id;
-										var lsOldPrices = db.PricesByContract.Where(pbc => pbc.cntr_id == pricesByContract.contract.id).ToList();
-
-										IEnumerable<MaintenanceItemViewModel> lsNewItems = from lsItems in pricesByContract.lsMaintenanceItems
-																																			 where !lsOldPrices.Any(itm => itm.mi_id == lsItems.id)
-																																			 select lsItems;
-
-										if (lsOldPrices.Count > 0)
-										{
-												foreach (var oldPrice in lsOldPrices) {
-														var newPrice = pricesByContract.lsMaintenanceItems.Find(it => it.id == oldPrice.mi_id);
-
-														if (oldPrice.mi_referencePrice != newPrice.referencePrice) {
-																transactionType = "UPDATE";
-																PricesByContract priceByContract = db.PricesByContract.Where(pbc => pbc.pbc_id == oldPrice.pbc_id).FirstOrDefault();
-																this.setDataPricesByContract(contract_id, (int)oldPrice.mi_id, (float)newPrice.referencePrice, transactionType,ref priceByContract);
-																db.SaveChanges();
-														}
-
-														foreach (var item in lsNewItems)
-														{
-																PricesByContract priceByContract = new PricesByContract();
-																this.setDataPricesByContract((int)pricesByContract.contract.id, (int)item.id, (float)item.referencePrice, "INSERT", ref priceByContract);
-																db.PricesByContract.Add(priceByContract);
-																db.SaveChanges();
-														}
-												}
-												
-										}
-										else {
-												transactionType = "INSERT";
-												foreach (var item in pricesByContract.lsMaintenanceItems) {
-														PricesByContract priceByContract = new PricesByContract();
-														this.setDataPricesByContract(contract_id,(int)item.id, (float)item.referencePrice, transactionType,ref priceByContract);
-														db.PricesByContract.Add(priceByContract);
-														db.SaveChanges();
-												}
-
-										}	
-
-										rta.response = true;
-										rta.message = "Se han asignado los precios del contrato: " + pricesByContract.contract.code;
-										return rta;
-								}
-						}
-						catch (Exception ex)
-						{
-								return null;
-						}
-				}
-
-				private void setDataPricesByContract(int contract_id, int maintenanceItem_id, float referencePrice, string transacctionType, ref PricesByContract priceByContract)
-				{
-
-						priceByContract.cntr_id = contract_id;
-						priceByContract.mi_id = maintenanceItem_id;
-						priceByContract.mi_referencePrice = referencePrice;
-
-						if (transacctionType == "INSERT") {
-								priceByContract.pbc_registrationDate = DateTime.Now;
-						}
-
-						if (transacctionType == "UPDATE")
-						{
-								priceByContract.pbc_updateDate = DateTime.Now;
-						}
-				}
-
-
-				[HttpGet]
-				public IHttpActionResult GetTaxesList() {
-
-						try
-						{
-								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
-								{
-										var lsTaxes = db.Taxes.Where(tx => tx.tax_state == true)
-												.Select(tx => new TaxViewModel
-												{
-														id = tx.tax_id,
-														name = tx.tax_name,
-														description = tx.tax_desccription,
-														percentValue = tx.tax_percentValue,
-														registrationDate = tx.tax_registrationDate
-												}).ToList();
-
-										return Ok(lsTaxes);
-								}
-						}
-						catch (Exception ex)
-						{
-								return BadRequest(ex.Message);
-						}
-				}
-
-
-				private bool deleteTaxesByItem(int item_id) {
-						try
-						{
-								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
-								{
-										var lsTaxes = db.TaxesByMaintenanceItem.Where(tx => tx.mi_id == item_id).ToList();
-										db.TaxesByMaintenanceItem.RemoveRange(lsTaxes);
-										db.SaveChanges();
-
-										return true;
-								}
-						}
-						catch (Exception)
-						{
-
-								return false;
-						}
-					
-				}
-
-
-
-		}
+        }
+
+        private static void deleteTaxesByItem(int item_id)
+        {
+            try
+            {
+                using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+                {
+                    var lsTaxes = db.TaxesByMaintenanceItem.Where(tx => tx.mi_id == item_id).ToList();
+                    db.TaxesByMaintenanceItem.RemoveRange(lsTaxes);
+                    db.SaveChanges();                    
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+
+        }
+
+        public static bool InsertMaintenanceItemByVehicleType(int itemId, List<VehicleTypeViewModel> lsVehicleTypes)
+        {
+            try
+            {
+                using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+                {
+                    foreach (var vehicleType in lsVehicleTypes)
+                    {
+                        MaintenanceItemsByVehicleTypes oItemDB = new MaintenanceItemsByVehicleTypes();
+                        oItemDB.mi_id = itemId;
+                        oItemDB.vt_id = vehicleType.id;
+                        oItemDB.mivt_registrationDate = DateTime.Now;
+
+                        db.MaintenanceItemsByVehicleTypes.Add(oItemDB);
+                        db.SaveChanges();
+                    }
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+
+                throw ex;
+            }
+
+        }
+
+        public static bool InsertMaintenanceItemByVehicleModel(int itemId, List<VehicleModelViewModel> lsVehicleModels)
+        {
+            try
+            {
+                using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+                {
+
+                    foreach (var model in lsVehicleModels)
+                    {
+                        MaintenanceItemsByVehicleModels oItemDB = new MaintenanceItemsByVehicleModels();
+                        oItemDB.mi_id = itemId;
+                        oItemDB.vm_id = model.id;
+                        oItemDB.mivm_registrationDate = DateTime.Now;
+
+                        db.MaintenanceItemsByVehicleModels.Add(oItemDB);
+                        db.SaveChanges();
+                    }
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        public static bool DeleteMaintenanceItemOfVehicleTypesAndModels(int itemId)
+        {
+            try
+            {
+                using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+                {
+                    var lsItemByType = db.MaintenanceItemsByVehicleTypes.Where(it => it.mi_id == itemId).ToList();
+
+                    if (lsItemByType.Count > 0)
+                    {
+                        db.MaintenanceItemsByVehicleTypes.RemoveRange(lsItemByType);
+                        db.SaveChanges();
+                    }
+
+                    var lsItemByModel = db.MaintenanceItemsByVehicleModels.Where(it => it.mi_id == itemId).ToList();
+
+                    if (lsItemByModel.Count > 0)
+                    {
+                        db.MaintenanceItemsByVehicleModels.RemoveRange(lsItemByModel);
+                        db.SaveChanges();
+                    }
+
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+
+                throw new Exception(ex.Message);
+            }
+        }
+
+        public static void configureItemByVehicleTypeAndVehicleModel(int itemId,MaintenanceItemViewModel item) {
+
+            MaintenanceItemController.DeleteMaintenanceItemOfVehicleTypesAndModels(itemId);
+
+            if (item.lsVehicleType.Count > 0)
+            {
+                MaintenanceItemController.InsertMaintenanceItemByVehicleType(itemId, item.lsVehicleType);
+            }
+
+            if (item.lsVehicleModel.Count > 0)
+            {
+                MaintenanceItemController.InsertMaintenanceItemByVehicleModel(itemId, item.lsVehicleModel);
+            }
+        }
+
+        public static PricesByContractViewModel getPricesByContractId(int contractId) {
+            try
+            {
+                using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+                {
+                    var priceByContract = new PricesByContractViewModel();
+                    var contract = ContractController.getContractById(contractId);
+
+                    if (contract != null)
+                    {
+                        var maintenanceItemsConfigurated = new List<MaintenanceItemViewModel>();
+
+                        var pricesConfigurated = db.PricesByContract
+                            .Where(ct => ct.cntr_id == contractId)
+                            .Select(pbc => new { pbc.mi_id, pbc.mi_referencePrice, pbc.discountValue })
+                            .AsEnumerable()
+                            .Select(c => (itemId: c.mi_id, itemPrice: c.mi_referencePrice, discountValue: c.discountValue))
+                            .ToList();
+
+                        foreach (var priceByItem in pricesConfigurated)
+                        {
+                            var maintenanceItem = MaintenanceItemController.getMaintenanceItemById((int)priceByItem.itemId);
+                            if (maintenanceItem != null)
+                            {
+                                maintenanceItem.referencePrice = priceByItem.itemPrice;
+                                maintenanceItem.valueDiscount = priceByItem.discountValue;
+                                maintenanceItemsConfigurated.Add(maintenanceItem);
+                            }
+
+                        }
+
+                        priceByContract.contract = contract;
+                        priceByContract.lsMaintenanceItems = maintenanceItemsConfigurated;
+                        return priceByContract;
+                    }
+                    else {
+                        throw new Exception("El contrato al cual deseas acceder no se encuentra creado o no se encuentra disponible.");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+
+    }
 
 
 

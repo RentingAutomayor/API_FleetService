@@ -33,12 +33,14 @@ namespace API_FleetService.Controllers
 												clientTmp.cellphone = financialInformationByClient.cli_cellphone;
 												clientTmp.website = financialInformationByClient.cli_website;
 												clientTmp.city = (financialInformationByClient.cty_id != null) ? new CityViewModel { id = financialInformationByClient.cty_id } : null;
+												
 
 												finantialInformation.client = clientTmp;
 												finantialInformation.approvedQuota = double.Parse(financialInformationByClient.ficl_approvedQuota.ToString());
 												finantialInformation.currentQuota = double.Parse(financialInformationByClient.ficl_currentQuota.ToString());
 												finantialInformation.consumedQuota = double.Parse(financialInformationByClient.ficl_consumedQuota.ToString());
 												finantialInformation.inTransitQuota = double.Parse(financialInformationByClient.ficl_inTransitQuota.ToString());
+
 
 												lsFinancialInformationByClient.Add(finantialInformation);
 										}
@@ -72,6 +74,7 @@ namespace API_FleetService.Controllers
 												clientTmp.address = client.cli_adress;
 												clientTmp.website = client.cli_website;
 												clientTmp.city = (client.cty_id != null) ? new CityViewModel { id = client.cty_id } : null;
+												clientTmp.contractualInformation = ContractualInformationController.getContractualInformationByClient((int)client.cli_id);
 												lsClient.Add(clientTmp);
 										}
 										return Ok(lsClient);
@@ -137,6 +140,35 @@ namespace API_FleetService.Controllers
 								return BadRequest(ex.Message);
 						}
 				}
+
+				public static FinancialInformationViewModel GetFinancialInformationByClientId(int client_id)
+				{
+						try
+						{
+								using (DB_FleetServiceEntities db = new DB_FleetServiceEntities())
+								{
+										var oFinancialInformation = db.FinancialInformationByClient.Where(cl => cl.cli_id == client_id && cl.ficl_state == true)
+																										.Select(fi => new FinancialInformationViewModel
+																										{
+																												id = fi.ficl_id,
+																												approvedQuota = (double)fi.ficl_approvedQuota,
+																												currentQuota = (double)fi.ficl_currentQuota,
+																												consumedQuota = (double)fi.ficl_consumedQuota,
+																												inTransitQuota = (double)fi.ficl_inTransitQuota
+																										})
+																										.FirstOrDefault();
+										return oFinancialInformation;
+								}
+
+						}
+						catch (Exception ex)
+						{
+								return null;
+						}
+				}
+
+
+
 		}
 }
 
